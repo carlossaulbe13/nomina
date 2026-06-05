@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+{% block title %}Registro Diario{% endblock %}
+
+{% block content %}
+<div x-data="registrosApp()" x-init="init()">
+
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Registro Diario</h2>
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-gray-600">Fecha:</label>
+      <input x-model="fecha" type="date"
+             @change="cargarRegistros()"
+             class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+    </div>
+  </div>
+
+  <!-- Banner día cerrado -->
+  <div x-show="dayClosed && !modoEdicion" class="mb-4 bg-red-50 border border-red-300 text-red-800 rounded-xl px-5 py-3 flex items-center justify-between">
+    <span class="font-semibold">🔒 Día cerrado</span>
+    <div class="flex items-center gap-3">
+      <span class="text-sm" x-text="'Cerrado por ' + (corteInfo?.cerrado_nombre || '—')"></span>
+      <button @click="modoEdicion = true"
+              class="bg-red-700 hover:bg-red-800 text-white text-xs font-medium px-3 py-1 rounded-lg transition">
+        ✏️ Modo edición
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner modo edición activo -->
+  <div x-show="dayClosed && modoEdicion" class="mb-4 bg-amber-50 border border-amber-400 text-amber-800 rounded-xl px-5 py-3 flex items-center justify-between">
+    <span class="font-semibold">✏️ Modo edición — día cerrado</span>
+    <button @click="modoEdicion = false"
+            class="text-amber-700 hover:text-amber-900 text-xs font-medium underline">
+      Salir del modo edición
+    </button>
+  </div>
+
+  <!-- Formulario de registro -->
+  <div class="bg-white rounded-xl shadow p-6 mb-6" :class="dayClosed && !modoEdicion ? 'opacity-50 pointer-events-none' : ''">
+    <h3 class="font-semibold text-gray-700 mb-4">Nuevo registro</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Empleado</label>
+        <select x-model="form.empleado_id"
+                @change="onEmpleadoChange()"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <option value="">Seleccionar empleado...</option>
+          <template x-for="emp in empleadosActivos" :key="emp.id">
+            <option :value="emp.id" x-text="emp.nombre + ' (' + sucursalCorta(emp.sucursal_id) + ')'"></option>
+          </template>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+        <select x-model="form.rol"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <option value="">Seleccionar rol...</option>
+          {% for rol, tarifa in roles.items() %}
+          <option value="{{ rol }}">{{ rol | capitalize }} – ${{ tarifa }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button @click="registrar()"
+                :disabled="!form.empleado_id || !form.rol || guardando || (dayClosed && !modoEdicion)"
+                class="w-full bg-amber-700 hover:bg-amber-800 text-white font-medium rounded-lg px-4 py-2 text-sm disabled:opacity-40 transition">
+          <span x-text="guardando ? 'Registrando...' : 'Registrar turno'"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Advertencia duplicado -->
+    <div x-show="duplicado" class="mt-3 bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm rounded-lg px-4 py-2">
+      ⚠️ <span x-text="duplicado"></span>
+    </div>
+    <div x-show="exito" class="mt-3 bg-green-50 border border-green-300 text-green-800 text-sm rounded-lg px-4 py-2">
+      ✓ Registro guardado
+    </div>
+  </div>
+
+  <!-- Botones corte del día (solo aplica a mi sucursal) -->
+  <div class="flex gap-3 mb-4">
+    <button x-show="!dayClosed" @click="cerrarDia()"
+            class="bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+      🔒 Cerrar día – <span x-text="sucursalCorta(SESSION_SUCURSAL)"></span>
+    </button>
+  </div>
+
+  <!-- Mi sucursal -->
+  <div class="bg-white rounded-xl shadow overflow-hidden mb-4">
+    <div class="flex items-center justify-between px-6 py-4 border-b">
+      <h3 class="font-semibold text-gray-700">
+        <span x-text="sucursalCorta(SESSION_SUCURSAL)"></span>
+        <span class="ml-2 text-amber-700 font-bold" x-text="'(' + registrosMios.length + ')'"></span>
+        <span x-show="dayClosed" class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Cerrado</span>
+      </h3>
+      <div class="text-sm text-gray-500">
+        Total: <span class="font-bold text-gray-800">$<span x-text="totalMio.toLocaleString()"></span></span>
+      </div>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-amber-50 text-gray-600 uppercase text-xs">
+        <tr>
+          <th class="px-4 py-3 text-left">Empleado</th>
+          <th class="px-4 py-3 text-left">Rol</th>
+          <th class="px-4 py-3 text-left">Registró</th>
+          <th class="px-4 py-3 text-right">Tarifa</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-if="registrosMios.length === 0">
+          <tr><td colspan="5" class="text-center py-6 text-gray-400">Sin registros para esta fecha</td></tr>
+        </template>
+        <template x-for="reg in registrosMios" :key="reg.key">
+          <tr class="border-t border-gray-100 hover:bg-amber-50">
+            <td class="px-4 py-3 font-medium text-gray-800" x-text="reg.nombre_empleado"></td>
+            <td class="px-4 py-3">
+              <span class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded-full capitalize" x-text="reg.rol"></span>
+            </td>
+            <td class="px-4 py-3 text-gray-500 text-xs" x-text="reg.registrado_nombre || '—'"></td>
+            <td class="px-4 py-3 text-right font-semibold text-gray-800">$<span x-text="reg.tarifa"></span></td>
+            <td class="px-4 py-3 text-right">
+              <button @click="eliminar(reg)" class="text-red-400 hover:text-red-600 text-xs">✕</button>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Otra sucursal (solo lectura) -->
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b">
+      <h3 class="font-semibold text-gray-500">
+        <span x-text="sucursalCorta(OTRA_SUCURSAL)"></span>
+        <span class="ml-1 text-xs text-gray-400">(solo lectura)</span>
+        <span class="ml-2 text-gray-600 font-bold" x-text="'(' + registrosOtros.length + ')'"></span>
+      </h3>
+      <div class="text-sm text-gray-400">
+        Total: <span class="font-bold">$<span x-text="totalOtro.toLocaleString()"></span></span>
+      </div>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+        <tr>
+          <th class="px-4 py-3 text-left">Empleado</th>
+          <th class="px-4 py-3 text-left">Rol</th>
+          <th class="px-4 py-3 text-left">Registró</th>
+          <th class="px-4 py-3 text-right">Tarifa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-if="registrosOtros.length === 0">
+          <tr><td colspan="4" class="text-center py-6 text-gray-300">Sin registros de la otra sucursal</td></tr>
+        </template>
+        <template x-for="reg in registrosOtros" :key="reg.key">
+          <tr class="border-t border-gray-100 hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-gray-600" x-text="reg.nombre_empleado"></td>
+            <td class="px-4 py-3">
+              <span class="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full capitalize" x-text="reg.rol"></span>
+            </td>
+            <td class="px-4 py-3 text-gray-400 text-xs" x-text="reg.registrado_nombre || '—'"></td>
+            <td class="px-4 py-3 text-right text-gray-600">$<span x-text="reg.tarifa"></span></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Indicador tiempo real -->
+  <p class="text-xs text-gray-400 mt-2 text-right">🟢 Actualización en tiempo real</p>
+
+  <!-- Modal de confirmación -->
+  <div x-show="modal.show" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div @click.stop x-transition class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden">
+      <div class="px-6 pt-6 pb-2">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+               :class="modal.tipo === 'danger' ? 'bg-red-100' : 'bg-amber-100'">
+            <span x-text="modal.tipo === 'danger' ? '🗑️' : '🔒'" class="text-lg"></span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800 text-base" x-text="modal.titulo"></h3>
+            <p class="text-sm text-gray-500 mt-1" x-text="modal.mensaje"></p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 px-6 py-4 justify-end">
+        <button @click="modalCancelar()"
+                class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
+          Cancelar
+        </button>
+        <button @click="modalConfirmar()"
+                :class="modal.tipo === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-800 hover:bg-gray-900'"
+                class="px-4 py-2 text-sm rounded-lg text-white font-medium transition">
+          <span x-text="modal.btnConfirmar || 'Confirmar'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ROLES_TARIFAS = {{ roles | tojson }};
+  const SUCURSALES = { s1: '6 PTE.', s2: '12 PTE.' };
+  const SESSION_SUCURSAL = '{{ user.sucursal_id }}';
+  const OTRA_SUCURSAL = Object.keys(SUCURSALES).find(s => s !== SESSION_SUCURSAL) || '';
+
+  function registrosApp() {
+    return {
+      fecha: new Date().toISOString().split('T')[0],
+      empleados: [],
+      registros: [],
+      form: { empleado_id: '', rol: '' },
+      duplicado: '',
+      exito: false,
+      guardando: false,
+      rtListener: null,
+      dayClosed: false,
+      modoEdicion: false,
+      corteInfo: null,
+      modal: { show: false, titulo: '', mensaje: '', tipo: 'default', btnConfirmar: 'Confirmar', resolve: null },
+
+      async init() {
+        const res = await fetch('/empleados/api');
+        this.empleados = await res.json();
+        this.escucharRegistros();
+        this.escucharCorte();
+      },
+
+      get empleadosActivos() {
+        return this.empleados.filter(e => e.activo);
+      },
+
+      get registrosMios() {
+        return this.registros.filter(r => r.sucursal_id === SESSION_SUCURSAL);
+      },
+      get registrosOtros() {
+        return this.registros.filter(r => r.sucursal_id === OTRA_SUCURSAL);
+      },
+      get totalMio() {
+        return this.registrosMios.reduce((s, r) => s + (r.tarifa || 0), 0);
+      },
+      get totalOtro() {
+        return this.registrosOtros.reduce((s, r) => s + (r.tarifa || 0), 0);
+      },
+
+      sucursalCorta(id) {
+        return SUCURSALES[id] || id || '—';
+      },
+
+      onEmpleadoChange() {
+        this.duplicado = '';
+        const key = `${this.form.empleado_id}_${this.fecha}`;
+        const yaRegistrado = this.registros.find(r => r.key === key);
+        if (yaRegistrado) {
+          const emp = this.empleados.find(e => e.id === this.form.empleado_id);
+          this.duplicado = `${emp?.nombre || 'Este empleado'} ya fue registrado hoy como ${yaRegistrado.rol}.`;
+        }
+      },
+
+      escucharRegistros() {
+        if (this.rtListener) this.rtListener();
+        const ref = db.ref('registros').orderByChild('fecha').equalTo(this.fecha);
+        ref.on('value', snap => {
+          const data = snap.val() || {};
+          this.registros = Object.entries(data)
+            .map(([key, val]) => ({ key, ...val }))
+            .sort((a, b) => a.nombre_empleado.localeCompare(b.nombre_empleado));
+          this.onEmpleadoChange();
+        });
+      },
+
+      escucharCorte() {
+        db.ref(`cortes/${this.fecha}/${SESSION_SUCURSAL}`).on('value', snap => {
+          const data = snap.val();
+          this.dayClosed = !!(data && data.cerrado);
+          this.corteInfo = data;
+          if (!this.dayClosed) this.modoEdicion = false;
+        });
+      },
+
+      cargarRegistros() {
+        this.modoEdicion = false;
+        this.escucharRegistros();
+        this.escucharCorte();
+      },
+
+      pedir(titulo, mensaje, tipo = 'default', btnConfirmar = 'Confirmar') {
+        return new Promise(resolve => {
+          this.modal = { show: true, titulo, mensaje, tipo, btnConfirmar, resolve };
+        });
+      },
+      modalConfirmar() { this.modal.show = false; this.modal.resolve(true); },
+      modalCancelar()  { this.modal.show = false; this.modal.resolve(false); },
+
+      async eliminar(reg) {
+        const ok = await this.pedir(
+          'Eliminar registro',
+          `¿Eliminar el turno de ${reg.nombre_empleado}?`,
+          'danger', 'Eliminar'
+        );
+        if (!ok) return;
+        await fetch(`/registros/api/${encodeURIComponent(reg.key)}`, { method: 'DELETE' });
+      },
+
+      async cerrarDia() {
+        const ok = await this.pedir(
+          'Cerrar día',
+          `¿Cerrar el día ${this.fecha}? No se podrán agregar ni eliminar registros de ${this.sucursalCorta(SESSION_SUCURSAL)}.`,
+          'default', 'Cerrar día'
+        );
+        if (!ok) return;
+        await fetch('/registros/corte', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fecha: this.fecha })
+        });
+      },
+
+      async eliminarCorte() {
+        const ok = await this.pedir('Eliminar corte', '¿Eliminar el corte del día? (solo para pruebas)', 'danger', 'Eliminar');
+        if (!ok) return;
+        await fetch(`/registros/corte/${this.fecha}/${SESSION_SUCURSAL}`, { method: 'DELETE' });
+      },
+
+      async registrar() {
+        const key = `${this.form.empleado_id}_${this.fecha}`;
+        if (this.registros.find(r => r.key === key)) {
+          this.onEmpleadoChange();
+          return;
+        }
+        const emp = this.empleados.find(e => e.id === this.form.empleado_id);
+        this.guardando = true;
+        this.exito = false;
+        try {
+          const res = await fetch('/registros/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              empleado_id: this.form.empleado_id,
+              nombre_empleado: emp.nombre,
+              rol: this.form.rol,
+              fecha: this.fecha,
+              sucursal_id: SESSION_SUCURSAL
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            this.duplicado = data.error;
+          } else {
+            this.form = { empleado_id: '', rol: '' };
+            this.exito = true;
+            setTimeout(() => this.exito = false, 2000);
+          }
+        } finally {
+          this.guardando = false;
+        }
+      },
+
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div x-data="dashboardApp()">
+  {% set partes = user.nombre.split(' ') %}
+  {% set sucursales = {'s1': '6 PTE.', 's2': '12 PTE.'} %}
+  <h2 class="text-2xl font-bold text-gray-800 mb-1">Bienvenido, {{ partes[0] }} {{ partes[1] if partes|length > 1 else '' }}</h2>
+  <p class="text-gray-500 text-sm mb-6">
+    Rol: <span class="font-semibold capitalize">{{ user.role }}</span>
+    {% if user.sucursal_id %} · Sucursal: {{ sucursales.get(user.sucursal_id, user.sucursal_id) }}{% endif %}
+  </p>
+
+  <!-- Resumen del día -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-xl shadow p-5 border-l-4 border-amber-500">
+      <p class="text-gray-500 text-sm">Registros hoy</p>
+      <p class="text-3xl font-bold text-gray-800 mt-1" x-text="registrosHoy"></p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border-l-4 border-green-500">
+      <p class="text-gray-500 text-sm">Total a pagar hoy</p>
+      <p class="text-3xl font-bold text-gray-800 mt-1">$<span x-text="totalHoy.toLocaleString()"></span></p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border-l-4 border-blue-500">
+      <p class="text-gray-500 text-sm">Fecha</p>
+      <p class="text-xl font-bold text-gray-800 mt-1" x-text="hoy"></p>
+    </div>
+  </div>
+
+  <!-- Accesos rápidos -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <a href="/registros/" class="bg-white rounded-xl shadow p-6 hover:shadow-md transition flex flex-col items-center gap-2 text-center">
+      <span class="text-4xl">📋</span>
+      <span class="font-semibold text-gray-800">Registro Diario</span>
+      <span class="text-sm text-gray-500">Registra turnos del día</span>
+    </a>
+    <a href="/empleados/" class="bg-white rounded-xl shadow p-6 hover:shadow-md transition flex flex-col items-center gap-2 text-center">
+      <span class="text-4xl">👥</span>
+      <span class="font-semibold text-gray-800">Empleados</span>
+      <span class="text-sm text-gray-500">Alta y baja de personal</span>
+    </a>
+    <a href="/nomina/" class="bg-white rounded-xl shadow p-6 hover:shadow-md transition flex flex-col items-center gap-2 text-center">
+      <span class="text-4xl">💰</span>
+      <span class="font-semibold text-gray-800">Nómina Semanal</span>
+      <span class="text-sm text-gray-500">Desglose y totales</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  function dashboardApp() {
+    return {
+      registrosHoy: 0,
+      totalHoy: 0,
+      hoy: new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+
+      init() {
+        const today = new Date().toISOString().split('T')[0];
+        db.ref('registros').orderByChild('fecha').equalTo(today).on('value', snap => {
+          const data = snap.val() || {};
+          const vals = Object.values(data);
+          this.registrosHoy = vals.length;
+          this.totalHoy = vals.reduce((s, r) => s + (r.tarifa || 0), 0);
+        });
+      }
+    }
+  }
+</script>
+{% endblock %}

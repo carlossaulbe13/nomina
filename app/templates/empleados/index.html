@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Empleados{% endblock %}
+
+{% block content %}
+<div x-data="empleadosApp()" x-init="init()">
+
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Empleados</h2>
+    <button @click="abrirModal()" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
+      + Nuevo empleado
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="flex gap-3 mb-4">
+    <input x-model="busqueda" type="text" placeholder="Buscar por nombre..."
+           class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-64">
+    <select x-model="filtroSucursal" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+      <option value="">Todas las sucursales</option>
+      {% for sid, sname in sucursales.items() %}
+      <option value="{{ sid }}">{{ sname }}</option>
+      {% endfor %}
+    </select>
+    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" x-model="soloActivos" class="rounded"> Solo activos
+    </label>
+  </div>
+
+  <!-- Tabla -->
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+        <tr>
+          <th class="px-4 py-3 text-left">Nombre</th>
+          <th class="px-4 py-3 text-left">Sucursal</th>
+          <th class="px-4 py-3 text-center">Estado</th>
+          <th class="px-4 py-3 text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-if="loading">
+          <tr><td colspan="4" class="text-center py-8 text-gray-400">Cargando...</td></tr>
+        </template>
+        <template x-for="emp in empleadosFiltrados" :key="emp.id">
+          <tr class="border-t border-gray-100 hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-gray-800" x-text="emp.nombre"></td>
+            <td class="px-4 py-3 text-gray-600" x-text="sucursalNombre(emp.sucursal_id)"></td>
+            <td class="px-4 py-3 text-center">
+              <span :class="emp.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                    class="px-2 py-1 rounded-full text-xs font-medium"
+                    x-text="emp.activo ? 'Activo' : 'Baja'"></span>
+            </td>
+            <td class="px-4 py-3 text-right flex gap-2 justify-end">
+              <button @click="abrirModal(emp)" class="text-amber-600 hover:underline text-xs">Editar</button>
+              <button x-show="emp.activo" @click="darBaja(emp)" class="text-red-500 hover:underline text-xs">Dar de baja</button>
+              <button x-show="!emp.activo" @click="reactivar(emp)" class="text-green-600 hover:underline text-xs">Reactivar</button>
+            </td>
+          </tr>
+        </template>
+        <template x-if="!loading && empleadosFiltrados.length === 0">
+          <tr><td colspan="4" class="text-center py-8 text-gray-400">Sin resultados</td></tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal de confirmación -->
+  <div x-show="confirm.show" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div @click.stop x-transition class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden">
+      <div class="px-6 pt-6 pb-2">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+               :class="confirm.tipo === 'danger' ? 'bg-red-100' : 'bg-green-100'">
+            <span x-text="confirm.tipo === 'danger' ? '⚠️' : '✅'" class="text-lg"></span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800 text-base" x-text="confirm.titulo"></h3>
+            <p class="text-sm text-gray-500 mt-1" x-text="confirm.mensaje"></p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 px-6 py-4 justify-end">
+        <button @click="confirm.resolve(false); confirm.show = false"
+                class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
+          Cancelar
+        </button>
+        <button @click="confirm.resolve(true); confirm.show = false"
+                :class="confirm.tipo === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
+                class="px-4 py-2 text-sm rounded-lg text-white font-medium transition"
+                x-text="confirm.btnOk"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div x-show="modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" x-cloak>
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4" @click.stop>
+      <h3 class="text-lg font-bold text-gray-800 mb-4" x-text="editando ? 'Editar empleado' : 'Nuevo empleado'"></h3>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+          <input x-model="form.nombre" type="text" required
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
+          <select x-model="form.sucursal_id" required
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <option value="">Seleccionar...</option>
+            {% for sid, sname in sucursales.items() %}
+            <option value="{{ sid }}">{{ sname }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div x-show="formError" class="mt-3 text-red-600 text-sm" x-text="formError"></div>
+
+      <div class="flex justify-end gap-3 mt-6">
+        <button @click="cerrarModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancelar</button>
+        <button @click="guardar()" :disabled="guardando"
+                class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+          <span x-text="guardando ? 'Guardando...' : 'Guardar'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUCURSALES = {{ sucursales | tojson }};
+
+  function empleadosApp() {
+    return {
+      empleados: [],
+      busqueda: '',
+      filtroSucursal: '',
+      soloActivos: true,
+      loading: true,
+      modal: false,
+      editando: null,
+      form: { nombre: '', sucursal_id: '' },
+      formError: '',
+      guardando: false,
+      confirm: { show: false, titulo: '', mensaje: '', tipo: 'danger', btnOk: 'Confirmar', resolve: null },
+
+      async init() {
+        const res = await fetch('/empleados/api');
+        this.empleados = await res.json();
+        this.loading = false;
+      },
+
+      get empleadosFiltrados() {
+        return this.empleados.filter(e => {
+          if (this.soloActivos && !e.activo) return false;
+          if (this.filtroSucursal && e.sucursal_id !== this.filtroSucursal) return false;
+          if (this.busqueda && !e.nombre.toLowerCase().includes(this.busqueda.toLowerCase())) return false;
+          return true;
+        });
+      },
+
+      sucursalNombre(id) {
+        return SUCURSALES[id] || id || '—';
+      },
+
+      abrirModal(emp = null) {
+        this.editando = emp;
+        this.form = emp ? { nombre: emp.nombre, sucursal_id: emp.sucursal_id } : { nombre: '', sucursal_id: '' };
+        this.formError = '';
+        this.modal = true;
+      },
+
+      cerrarModal() {
+        this.modal = false;
+        this.editando = null;
+      },
+
+      async guardar() {
+        if (!this.form.nombre.trim() || !this.form.sucursal_id) {
+          this.formError = 'Completa todos los campos';
+          return;
+        }
+        this.guardando = true;
+        this.formError = '';
+        try {
+          let res;
+          if (this.editando) {
+            res = await fetch(`/empleados/api/${this.editando.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.form)
+            });
+          } else {
+            res = await fetch('/empleados/api', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.form)
+            });
+          }
+          if (!res.ok) throw new Error('Error al guardar');
+          const data = await res.json();
+          if (this.editando) {
+            const idx = this.empleados.findIndex(e => e.id === this.editando.id);
+            if (idx !== -1) this.empleados[idx] = { ...this.empleados[idx], ...this.form };
+          } else {
+            this.empleados.push(data);
+          }
+          this.cerrarModal();
+        } catch (e) {
+          this.formError = e.message;
+        } finally {
+          this.guardando = false;
+        }
+      },
+
+      pedir(titulo, mensaje, tipo = 'danger', btnOk = 'Confirmar') {
+        return new Promise(resolve => {
+          this.confirm = { show: true, titulo, mensaje, tipo, btnOk, resolve };
+        });
+      },
+
+      async darBaja(emp) {
+        const ok = await this.pedir(
+          'Dar de baja',
+          `¿Dar de baja a ${emp.nombre}? Seguirá apareciendo en nóminas anteriores pero no podrá registrar turnos nuevos.`,
+          'danger', 'Dar de baja'
+        );
+        if (!ok) return;
+        await fetch(`/empleados/api/${emp.id}`, { method: 'DELETE' });
+        const idx = this.empleados.findIndex(e => e.id === emp.id);
+        if (idx !== -1) this.empleados[idx].activo = false;
+      },
+
+      async reactivar(emp) {
+        const ok = await this.pedir(
+          'Reactivar empleado',
+          `¿Reactivar a ${emp.nombre}?`,
+          'success', 'Reactivar'
+        );
+        if (!ok) return;
+        await fetch(`/empleados/api/${emp.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: emp.nombre, sucursal_id: emp.sucursal_id, activo: true })
+        });
+        const idx = this.empleados.findIndex(e => e.id === emp.id);
+        if (idx !== -1) this.empleados[idx].activo = true;
+      }
+    }
+  }
+</script>
+{% endblock %}

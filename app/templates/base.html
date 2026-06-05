@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Nómina{% endblock %} – Restaurante</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <nav class="bg-amber-700 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <span class="font-bold text-lg">🍽️ Caldos Angelita</span>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="/dashboard" class="hover:text-amber-200">Inicio</a>
+        <a href="/registros/" class="hover:text-amber-200">Registro Diario</a>
+        <a href="/empleados/" class="hover:text-amber-200">Empleados</a>
+        <a href="/nomina/" class="hover:text-amber-200">Nómina</a>
+        {% if current_user.get('role') == 'dueno' %}
+        <a href="/usuarios/" class="hover:text-amber-200">Usuarios</a>
+        {% endif %}
+        <a href="/logout" class="bg-amber-900 px-3 py-1 rounded hover:bg-amber-800">Salir</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>
