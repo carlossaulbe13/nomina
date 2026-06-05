@@ -112,16 +112,19 @@
         <template x-if="registrosMios.length === 0">
           <tr><td colspan="5" class="text-center py-6 text-gray-400">Sin registros para esta fecha</td></tr>
         </template>
-        <template x-for="reg in registrosMios" :key="reg.key">
-          <tr class="border-t border-gray-100 hover:bg-amber-50">
-            <td class="px-4 py-3 font-medium text-gray-800" x-text="reg.nombre_empleado"></td>
-            <td class="px-4 py-3">
-              <span class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded-full capitalize" x-text="reg.rol"></span>
+        <template x-for="item in agruparFlat(registrosMios)" :key="item.key">
+          <tr :class="item.esGrupo ? 'bg-amber-50 border-t border-amber-100' : 'border-t border-gray-100 hover:bg-amber-50'">
+            <td :colspan="item.esGrupo ? '5' : null"
+                class="px-4"
+                :class="item.esGrupo ? 'py-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider' : 'py-3 font-medium text-gray-800'"
+                x-text="item.esGrupo ? item.rol : item.nombre_empleado"></td>
+            <td x-show="!item.esGrupo" class="px-4 py-3">
+              <span class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded-full capitalize" x-text="item.rol"></span>
             </td>
-            <td class="px-4 py-3 text-gray-500 text-xs" x-text="reg.registrado_nombre || '—'"></td>
-            <td class="px-4 py-3 text-right font-semibold text-gray-800">$<span x-text="reg.tarifa"></span></td>
-            <td class="px-4 py-3 text-right">
-              <button @click="eliminar(reg)" class="text-red-400 hover:text-red-600 text-xs">✕</button>
+            <td x-show="!item.esGrupo" class="px-4 py-3 text-gray-500 text-xs" x-text="item.registrado_nombre || '—'"></td>
+            <td x-show="!item.esGrupo" class="px-4 py-3 text-right font-semibold text-gray-800">$<span x-text="item.tarifa"></span></td>
+            <td x-show="!item.esGrupo" class="px-4 py-3 text-right">
+              <button @click="eliminar(item)" class="text-red-400 hover:text-red-600 text-xs">✕</button>
             </td>
           </tr>
         </template>
@@ -154,14 +157,17 @@
         <template x-if="registrosOtros.length === 0">
           <tr><td colspan="4" class="text-center py-6 text-gray-300">Sin registros de la otra sucursal</td></tr>
         </template>
-        <template x-for="reg in registrosOtros" :key="reg.key">
-          <tr class="border-t border-gray-100 hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium text-gray-600" x-text="reg.nombre_empleado"></td>
-            <td class="px-4 py-3">
-              <span class="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full capitalize" x-text="reg.rol"></span>
+        <template x-for="item in agruparFlat(registrosOtros)" :key="item.key">
+          <tr :class="item.esGrupo ? 'bg-gray-50 border-t border-gray-200' : 'border-t border-gray-100 hover:bg-gray-50'">
+            <td :colspan="item.esGrupo ? '4' : null"
+                class="px-4"
+                :class="item.esGrupo ? 'py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider' : 'py-3 font-medium text-gray-600'"
+                x-text="item.esGrupo ? item.rol : item.nombre_empleado"></td>
+            <td x-show="!item.esGrupo" class="px-4 py-3">
+              <span class="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full capitalize" x-text="item.rol"></span>
             </td>
-            <td class="px-4 py-3 text-gray-400 text-xs" x-text="reg.registrado_nombre || '—'"></td>
-            <td class="px-4 py-3 text-right text-gray-600">$<span x-text="reg.tarifa"></span></td>
+            <td x-show="!item.esGrupo" class="px-4 py-3 text-gray-400 text-xs" x-text="item.registrado_nombre || '—'"></td>
+            <td x-show="!item.esGrupo" class="px-4 py-3 text-right text-gray-600">$<span x-text="item.tarifa"></span></td>
           </tr>
         </template>
       </tbody>
@@ -317,6 +323,29 @@
         this.modoEdicion = false;
         this.escucharRegistros();
         this.escucharCorte();
+      },
+
+      agruparFlat(lista) {
+        const orden = ['cajero', 'brasero', 'mole', 'aguas', 'loza', 'apoyo', 'mesero', 'descanso', 'permiso'];
+        const grupos = {};
+        for (const r of lista) {
+          const g = r.rol || 'otro';
+          if (!grupos[g]) grupos[g] = [];
+          grupos[g].push(r);
+        }
+        for (const g of Object.keys(grupos)) {
+          grupos[g].sort((a, b) => a.nombre_empleado.localeCompare(b.nombre_empleado));
+        }
+        const rolesPresentes = [
+          ...orden.filter(r => grupos[r]),
+          ...Object.keys(grupos).filter(r => !orden.includes(r)),
+        ];
+        const result = [];
+        for (const rol of rolesPresentes) {
+          result.push({ esGrupo: true, rol, key: `_g_${rol}` });
+          for (const reg of grupos[rol]) result.push(reg);
+        }
+        return result;
       },
 
       pedirPermiso() {
