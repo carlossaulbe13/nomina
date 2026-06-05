@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 from app.auth import login_required
 from app.services.registros_service import (
     get_registros_by_date, create_registro, delete_registro, update_registro, ROLES,
-    create_corte, delete_corte, tiene_descanso_semana, _semana,
+    create_corte, delete_corte, tiene_descanso_semana,
 )
 from datetime import date
 
@@ -57,8 +57,7 @@ def api_check_descanso():
     fecha = request.args.get('fecha')
     if not empleado_id or not fecha:
         return jsonify({'error': 'Faltan parámetros'}), 400
-    semana = _semana(fecha)
-    tiene = tiene_descanso_semana(empleado_id, semana)
+    tiene = tiene_descanso_semana(empleado_id, fecha)
     return jsonify({'tiene_descanso': tiene})
 
 

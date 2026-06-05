@@ -80,9 +80,14 @@ def delete_corte(fecha, sucursal_id):
     db.reference(f'cortes/{fecha}/{sucursal_id}').delete()
 
 
-def tiene_descanso_semana(empleado_id, semana):
-    data = db.reference('registros').order_by_child('semana').equal_to(semana).get() or {}
-    for v in data.values():
-        if v.get('empleado_id') == empleado_id and v.get('rol') == 'descanso':
+def tiene_descanso_semana(empleado_id, fecha_str):
+    semana = _semana(fecha_str)
+    d = date.fromisoformat(fecha_str)
+    for delta in range(-6, 7):
+        check_date = (d + timedelta(days=delta)).isoformat()
+        if _semana(check_date) != semana:
+            continue
+        reg = db.reference(f'registros/{empleado_id}_{check_date}').get()
+        if reg and reg.get('rol') == 'descanso':
             return True
     return False
