@@ -171,6 +171,37 @@
   <!-- Indicador tiempo real -->
   <p class="text-xs text-gray-400 mt-2 text-right">🟢 Actualización en tiempo real</p>
 
+  <!-- Modal permiso -->
+  <div x-show="modalPermiso.show" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div @click.stop x-transition class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden">
+      <div class="px-6 pt-6 pb-2">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <span class="text-lg">📋</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800 text-base">Segundo descanso en la semana</h3>
+            <p class="text-sm text-gray-500 mt-1">Este empleado ya descansó esta semana. ¿El descanso actual es por permiso?</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 px-6 py-4 justify-end flex-wrap">
+        <button @click="modalPermiso.show=false; modalPermiso.resolve(null)"
+                class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
+          Cancelar
+        </button>
+        <button @click="modalPermiso.show=false; modalPermiso.resolve(false)"
+                class="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-800 text-white font-medium transition">
+          No, descanso ($430)
+        </button>
+        <button @click="modalPermiso.show=false; modalPermiso.resolve(true)"
+                class="px-4 py-2 text-sm rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium transition">
+          Sí, es permiso ($0)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal de confirmación -->
   <div x-show="modal.show" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div @click.stop x-transition class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden">
@@ -221,6 +252,7 @@
       modoEdicion: false,
       corteInfo: null,
       modal: { show: false, titulo: '', mensaje: '', tipo: 'default', btnConfirmar: 'Confirmar', resolve: null },
+      modalPermiso: { show: false, resolve: null },
 
       async init() {
         const res = await fetch('/empleados/api');
@@ -287,6 +319,12 @@
         this.escucharCorte();
       },
 
+      pedirPermiso() {
+        return new Promise(resolve => {
+          this.modalPermiso = { show: true, resolve };
+        });
+      },
+
       pedir(titulo, mensaje, tipo = 'default', btnConfirmar = 'Confirmar') {
         return new Promise(resolve => {
           this.modal = { show: true, titulo, mensaje, tipo, btnConfirmar, resolve };
@@ -331,6 +369,19 @@
           this.onEmpleadoChange();
           return;
         }
+
+        let rolFinal = this.form.rol;
+
+        if (this.form.rol === 'descanso') {
+          const checkRes = await fetch(`/registros/check-descanso?empleado_id=${encodeURIComponent(this.form.empleado_id)}&fecha=${this.fecha}`);
+          const checkData = await checkRes.json();
+          if (checkData.tiene_descanso) {
+            const esPermiso = await this.pedirPermiso();
+            if (esPermiso === null) return;
+            if (esPermiso) rolFinal = 'permiso';
+          }
+        }
+
         const emp = this.empleados.find(e => e.id === this.form.empleado_id);
         this.guardando = true;
         this.exito = false;
@@ -341,7 +392,7 @@
             body: JSON.stringify({
               empleado_id: this.form.empleado_id,
               nombre_empleado: emp.nombre,
-              rol: this.form.rol,
+              rol: rolFinal,
               fecha: this.fecha,
               sucursal_id: SESSION_SUCURSAL
             })

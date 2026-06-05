@@ -78,3 +78,11 @@ def create_corte(fecha, sucursal_id, uid, nombre):
 
 def delete_corte(fecha, sucursal_id):
     db.reference(f'cortes/{fecha}/{sucursal_id}').delete()
+
+
+def tiene_descanso_semana(empleado_id, semana):
+    data = db.reference('registros').order_by_child('semana').equal_to(semana).get() or {}
+    for v in data.values():
+        if v.get('empleado_id') == empleado_id and v.get('rol') == 'descanso':
+            return True
+    return False
