@@ -15,8 +15,8 @@ ROLES = {
 
 def _semana(fecha_str):
     d = date.fromisoformat(fecha_str)
-    # Desplazar +1 día para que el domingo sea el inicio de semana
-    shifted = d + timedelta(days=1)
+    # Desplazar +2 días para que el sábado sea inicio de semana (sáb→vie)
+    shifted = d + timedelta(days=2)
     iso = shifted.isocalendar()
     return f"{iso[0]}-W{iso[1]:02d}"
 
