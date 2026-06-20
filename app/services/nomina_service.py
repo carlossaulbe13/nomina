@@ -6,10 +6,10 @@ DIAS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 def _semana_a_fechas(semana_str):
     year, week = semana_str.split('-W')
-    # El lunes ISO menos 1 día = el domingo que inicia la semana
+    # El lunes ISO menos 2 días = el sábado que inicia la semana (sáb→vie)
     monday = date.fromisocalendar(int(year), int(week), 1)
-    sunday = monday - timedelta(days=1)
-    return [(sunday + timedelta(days=i)).isoformat() for i in range(7)]
+    saturday = monday - timedelta(days=2)
+    return [(saturday + timedelta(days=i)).isoformat() for i in range(7)]
 
 
 def get_nomina_semanal(semana, sucursal_id=None):
