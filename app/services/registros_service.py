@@ -10,6 +10,7 @@ ROLES = {
     'loza': 430,
     'mesero': 320,
     'descanso': 430,
+    'permiso': 0,
 }
 
 
