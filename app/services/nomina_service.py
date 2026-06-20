@@ -4,6 +4,13 @@ from datetime import date, timedelta
 DIAS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 
+def _semana(fecha_str):
+    d = date.fromisoformat(fecha_str)
+    shifted = d + timedelta(days=2)
+    iso = shifted.isocalendar()
+    return f"{iso[0]}-W{iso[1]:02d}"
+
+
 def _semana_a_fechas(semana_str):
     year, week = semana_str.split('-W')
     # El lunes ISO menos 2 días = el sábado que inicia la semana (sáb→vie)
@@ -14,7 +21,8 @@ def _semana_a_fechas(semana_str):
 
 def get_nomina_semanal(semana, sucursal_id=None):
     all_data = db.reference('registros').get() or {}
-    data = {k: v for k, v in all_data.items() if v.get('semana') == semana}
+    fechas_set = set(_semana_a_fechas(semana))
+    data = {k: v for k, v in all_data.items() if v.get('fecha') in fechas_set}
     pago_overrides = db.reference(f'pago_sucursal/{semana}').get() or {}
     fechas = _semana_a_fechas(semana)
     empleados_map = {}
@@ -61,7 +69,7 @@ def get_nomina_semanal(semana, sucursal_id=None):
 
 def get_semanas_disponibles():
     data = db.reference('registros').get() or {}
-    semanas = {v['semana'] for v in data.values() if 'semana' in v}
+    semanas = {_semana(v['fecha']) for v in data.values() if 'fecha' in v}
     return sorted(semanas, reverse=True)
 
 
@@ -71,7 +79,8 @@ def set_pago_sucursal(semana, empleado_id, sucursal_id):
 
 def delete_semana(semana):
     all_data = db.reference('registros').get() or {}
-    keys = [k for k, v in all_data.items() if v.get('semana') == semana]
+    fechas_set = set(_semana_a_fechas(semana))
+    keys = [k for k, v in all_data.items() if v.get('fecha') in fechas_set]
     for key in keys:
         db.reference(f'registros/{key}').delete()
     db.reference(f'pago_sucursal/{semana}').delete()
