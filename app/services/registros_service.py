@@ -23,8 +23,8 @@ def _semana(fecha_str):
 
 
 def get_registros_by_date(fecha):
-    data = db.reference('registros').order_by_child('fecha').equal_to(fecha).get() or {}
-    result = [{'key': k, **v} for k, v in data.items()]
+    all_data = db.reference('registros').get() or {}
+    result = [{'key': k, **v} for k, v in all_data.items() if v.get('fecha') == fecha]
     result.sort(key=lambda x: x.get('nombre_empleado', ''))
     return result
 
