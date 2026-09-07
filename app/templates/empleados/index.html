@@ -2,15 +2,15 @@
 {% block title %}Empleados{% endblock %}
 
 {% block content %}
-<div x-data="empleadosApp()" x-init="init()">
+<div x-data="empleadosApp()">
 
   <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="titulo">Empleados</h1>
-      <p class="mt-1 text-sm text-arena-500" x-text="resumen"></p>
+      <p class="mt-1 text-sm text-arena-600" x-text="resumen"></p>
     </div>
     <button @click="abrirModal()" class="btn btn-primario w-full sm:w-auto">
-      <span class="text-base leading-none">＋</span> Nuevo empleado
+      <svg class="h-4 w-4" aria-hidden="true"><use href="#ic-plus"></use></svg> Nuevo empleado
     </button>
   </header>
 
@@ -18,7 +18,7 @@
   <div class="tarjeta mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
     <div class="relative flex-1">
       <label for="busqueda" class="sr-only">Buscar empleado</label>
-      <span class="pointer-events-none absolute inset-y-0 left-0 grid w-11 place-items-center text-arena-400">🔎</span>
+      <span class="pointer-events-none absolute inset-y-0 left-0 grid w-11 place-items-center text-arena-500"><svg class="h-4 w-4" aria-hidden="true"><use href="#ic-buscar"></use></svg></span>
       <input id="busqueda" x-model="busqueda" type="text" placeholder="Buscar por nombre…"
              autocapitalize="none" autocorrect="off" class="campo pl-11">
     </div>
@@ -36,21 +36,21 @@
               ? 'border-marca-600 bg-marca-50 text-marca-800'
               : 'border-arena-300 bg-white text-arena-600 hover:bg-arena-50'"
             class="btn shrink-0 border-2">
-      <span x-text="soloActivos ? '✓' : '○'"></span> Solo activos
+      Solo activos
     </button>
   </div>
 
   <!-- Celular: tarjetas -->
   <ul class="tarjeta divide-y divide-arena-200 md:hidden">
     <template x-if="loading">
-      <li class="px-5 py-12 text-center text-sm text-arena-400">Cargando…</li>
+      <li class="px-5 py-12 text-center text-sm text-arena-500">Cargando…</li>
     </template>
     <template x-for="emp in empleadosFiltrados" :key="emp.id">
       <li class="px-4 py-4">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="truncate font-medium text-arena-900" x-text="emp.nombre"></p>
-            <p class="mt-0.5 text-sm text-arena-500" x-text="sucursalNombre(emp.sucursal_id)"></p>
+            <p class="mt-0.5 text-sm text-arena-600" x-text="sucursalNombre(emp.sucursal_id)"></p>
           </div>
           <span :class="emp.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-arena-200 text-arena-600'"
                 class="chip shrink-0" x-text="emp.activo ? 'Activo' : 'Baja'"></span>
@@ -63,7 +63,7 @@
       </li>
     </template>
     <template x-if="!loading && empleadosFiltrados.length === 0">
-      <li class="px-5 py-12 text-center text-sm text-arena-400">Sin resultados</li>
+      <li class="px-5 py-12 text-center text-sm text-arena-500">Sin resultados</li>
     </template>
   </ul>
 
@@ -81,7 +81,7 @@
         </thead>
         <tbody class="divide-y divide-arena-200">
           <template x-if="loading">
-            <tr><td colspan="4" class="px-4 py-12 text-center text-arena-400">Cargando…</td></tr>
+            <tr><td colspan="4" class="px-4 py-12 text-center text-arena-500">Cargando…</td></tr>
           </template>
           <template x-for="emp in empleadosFiltrados" :key="emp.id">
             <tr class="transition hover:bg-arena-50">
@@ -103,7 +103,7 @@
             </tr>
           </template>
           <template x-if="!loading && empleadosFiltrados.length === 0">
-            <tr><td colspan="4" class="px-4 py-12 text-center text-arena-400">Sin resultados</td></tr>
+            <tr><td colspan="4" class="px-4 py-12 text-center text-arena-500">Sin resultados</td></tr>
           </template>
         </tbody>
       </table>
@@ -117,9 +117,11 @@
        role="dialog" aria-modal="true" aria-labelledby="titulo-confirm">
     <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
       <div class="flex items-start gap-3.5 px-6 pb-4 pt-6">
-        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg"
-              :class="confirm.tipo === 'danger' ? 'bg-red-100' : 'bg-emerald-100'"
-              x-text="confirm.tipo === 'danger' ? '⚠️' : '✅'"></span>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+              :class="confirm.tipo === 'danger' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'">
+          <svg x-show="confirm.tipo === 'danger'" class="h-5 w-5" aria-hidden="true"><use href="#ic-alerta"></use></svg>
+          <svg x-show="confirm.tipo !== 'danger'" class="h-5 w-5" aria-hidden="true"><use href="#ic-check"></use></svg>
+        </span>
         <div>
           <h3 id="titulo-confirm" class="font-semibold text-arena-900" x-text="confirm.titulo"></h3>
           <p class="mt-1 text-sm text-arena-600" x-text="confirm.mensaje"></p>
@@ -264,7 +266,9 @@
           avisar(this.editando ? 'Empleado actualizado' : 'Empleado agregado', 'exito');
           this.cerrarModal();
         } catch (e) {
-          this.formError = e.message || 'No se pudo guardar';
+          this.formError = e instanceof TypeError
+            ? 'Sin conexión con el servidor'   // fetch rechaza asi cuando no hay red
+            : (e.message || 'No se pudo guardar');
         } finally {
           this.guardando = false;
         }
@@ -287,8 +291,9 @@
           'danger', 'Dar de baja'
         );
         if (!ok) return;
-        const res = await fetch(`/empleados/api/${emp.id}`, { method: 'DELETE' });
-        if (!await respuestaOk(res, 'No se pudo dar de baja al empleado')) return;
+        const ok = await enviar(`/empleados/api/${emp.id}`, { method: 'DELETE' },
+          'No se pudo dar de baja al empleado');
+        if (!ok) return;
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = false;
         avisar(`${emp.nombre} dado de baja`, 'exito');
@@ -297,12 +302,10 @@
       async reactivar(emp) {
         const ok = await this.pedir('Reactivar empleado', `¿Reactivar a ${emp.nombre}?`, 'success', 'Reactivar');
         if (!ok) return;
-        const res = await fetch(`/empleados/api/${emp.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre: emp.nombre, sucursal_id: emp.sucursal_id, activo: true })
-        });
-        if (!await respuestaOk(res, 'No se pudo reactivar al empleado')) return;
+        const ok = await enviarJSON(`/empleados/api/${emp.id}`, 'PUT',
+          { nombre: emp.nombre, sucursal_id: emp.sucursal_id, activo: true },
+          'No se pudo reactivar al empleado');
+        if (!ok) return;
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = true;
         avisar(`${emp.nombre} reactivado`, 'exito');

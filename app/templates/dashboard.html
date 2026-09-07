@@ -7,7 +7,7 @@
 <div x-data="dashboardApp()">
 
   <header class="mb-7">
-    <p class="text-sm font-medium capitalize text-arena-500" x-text="hoy"></p>
+    <p class="text-sm font-medium capitalize text-arena-600" x-text="hoy"></p>
     <h1 class="titulo mt-1">
       Hola, {{ partes[0] }}{% if partes|length > 1 %} {{ partes[1] }}{% endif %}
     </h1>
@@ -21,7 +21,7 @@
 
   <!-- Resumen del día -->
   <section class="mb-8" aria-labelledby="resumen-hoy">
-    <h2 id="resumen-hoy" class="mb-3 text-xs font-semibold uppercase tracking-widest text-arena-500">Resumen de hoy</h2>
+    <h2 id="resumen-hoy" class="mb-3 text-xs font-semibold uppercase tracking-widest text-arena-600">Resumen de hoy</h2>
 
     <div class="grid grid-cols-2 gap-3 sm:gap-4">
       <div class="tarjeta p-5">
@@ -48,7 +48,7 @@
           <div class="flex items-center gap-2.5">
             <span class="h-2.5 w-2.5 rounded-full" :class="sid === 's1' ? 'bg-marca-500' : 'bg-emerald-500'"></span>
             <span class="font-medium text-arena-800" x-text="nombre"></span>
-            <span class="text-sm text-arena-500" x-text="'· ' + conteoPorSucursal(sid) + ' turnos'"></span>
+            <span class="text-sm text-arena-600" x-text="'· ' + conteoPorSucursal(sid) + ' turnos'"></span>
           </div>
           <span class="font-semibold tabular-nums text-arena-900">
             $<span x-text="totalPorSucursal(sid).toLocaleString('es-MX')"></span>
@@ -60,11 +60,11 @@
 
   <!-- Accesos rápidos -->
   <section aria-labelledby="accesos">
-    <h2 id="accesos" class="mb-3 text-xs font-semibold uppercase tracking-widest text-arena-500">Accesos rápidos</h2>
+    <h2 id="accesos" class="mb-3 text-xs font-semibold uppercase tracking-widest text-arena-600">Accesos rápidos</h2>
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
       <a href="/registros/"
          class="tarjeta flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-marca-300 hover:shadow-flotante focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25 sm:flex-col sm:items-start sm:gap-3">
-        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-marca-100 text-2xl">📋</span>
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-marca-100 text-marca-700"><svg class="h-6 w-6" aria-hidden="true"><use href="#ic-registro"></use></svg></span>
         <span>
           <span class="block font-semibold text-arena-900">Registro diario</span>
           <span class="mt-0.5 block text-sm text-arena-600">Captura los turnos del día</span>
@@ -72,7 +72,7 @@
       </a>
       <a href="/empleados/"
          class="tarjeta flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-marca-300 hover:shadow-flotante focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25 sm:flex-col sm:items-start sm:gap-3">
-        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-arena-200 text-2xl">👥</span>
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-arena-200 text-arena-700"><svg class="h-6 w-6" aria-hidden="true"><use href="#ic-empleados"></use></svg></span>
         <span>
           <span class="block font-semibold text-arena-900">Empleados</span>
           <span class="mt-0.5 block text-sm text-arena-600">Alta y baja de personal</span>
@@ -80,7 +80,7 @@
       </a>
       <a href="/nomina/"
          class="tarjeta flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-marca-300 hover:shadow-flotante focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25 sm:flex-col sm:items-start sm:gap-3">
-        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-100 text-2xl">💰</span>
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><svg class="h-6 w-6" aria-hidden="true"><use href="#ic-nomina"></use></svg></span>
         <span>
           <span class="block font-semibold text-arena-900">Nómina semanal</span>
           <span class="mt-0.5 block text-sm text-arena-600">Desglose, pagos y PDF</span>

@@ -2,29 +2,29 @@
 {% block title %}Usuarios{% endblock %}
 
 {% block content %}
-<div x-data="usuariosApp()" x-init="init()">
+<div x-data="usuariosApp()">
 
   <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="titulo">Usuarios del sistema</h1>
-      <p class="mt-1 text-sm text-arena-500">Quién puede entrar y con qué permisos</p>
+      <p class="mt-1 text-sm text-arena-600">Quién puede entrar y con qué permisos</p>
     </div>
     <button @click="abrirModal()" class="btn btn-primario w-full sm:w-auto">
-      <span class="text-base leading-none">＋</span> Nuevo usuario
+      <svg class="h-4 w-4" aria-hidden="true"><use href="#ic-plus"></use></svg> Nuevo usuario
     </button>
   </header>
 
   <!-- Celular: tarjetas -->
   <ul class="tarjeta divide-y divide-arena-200 md:hidden">
     <template x-if="loading">
-      <li class="px-5 py-12 text-center text-sm text-arena-400">Cargando…</li>
+      <li class="px-5 py-12 text-center text-sm text-arena-500">Cargando…</li>
     </template>
     <template x-for="u in usuarios" :key="u.uid">
       <li class="px-4 py-4">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="truncate font-medium text-arena-900" x-text="u.nombre"></p>
-            <p class="mt-0.5 truncate text-sm text-arena-500" x-text="'@' + u.usuario"></p>
+            <p class="mt-0.5 truncate text-sm text-arena-600" x-text="'@' + u.usuario"></p>
           </div>
           <span :class="u.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-arena-200 text-arena-600'"
                 class="chip shrink-0" x-text="u.activo ? 'Activo' : 'Inactivo'"></span>
@@ -43,7 +43,7 @@
       </li>
     </template>
     <template x-if="!loading && usuarios.length === 0">
-      <li class="px-5 py-12 text-center text-sm text-arena-400">Sin usuarios</li>
+      <li class="px-5 py-12 text-center text-sm text-arena-500">Sin usuarios</li>
     </template>
   </ul>
 
@@ -63,7 +63,7 @@
         </thead>
         <tbody class="divide-y divide-arena-200">
           <template x-if="loading">
-            <tr><td colspan="6" class="px-4 py-12 text-center text-arena-400">Cargando…</td></tr>
+            <tr><td colspan="6" class="px-4 py-12 text-center text-arena-500">Cargando…</td></tr>
           </template>
           <template x-for="u in usuarios" :key="u.uid">
             <tr class="transition hover:bg-arena-50">
@@ -101,9 +101,11 @@
        role="dialog" aria-modal="true" aria-labelledby="titulo-confirm">
     <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
       <div class="flex items-start gap-3.5 px-6 pb-4 pt-6">
-        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg"
-              :class="confirm.tipo === 'danger' ? 'bg-red-100' : 'bg-emerald-100'"
-              x-text="confirm.tipo === 'danger' ? '⚠️' : '✅'"></span>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+              :class="confirm.tipo === 'danger' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'">
+          <svg x-show="confirm.tipo === 'danger'" class="h-5 w-5" aria-hidden="true"><use href="#ic-alerta"></use></svg>
+          <svg x-show="confirm.tipo !== 'danger'" class="h-5 w-5" aria-hidden="true"><use href="#ic-check"></use></svg>
+        </span>
         <div>
           <h3 id="titulo-confirm" class="font-semibold text-arena-900" x-text="confirm.titulo"></h3>
           <p class="mt-1 text-sm text-arena-600" x-text="confirm.mensaje"></p>
@@ -143,7 +145,7 @@
           <div>
             <label for="us-password" class="etiqueta">
               Contraseña
-              <span x-show="editando" x-cloak class="font-normal text-arena-400">(vacío = no cambiar)</span>
+              <span x-show="editando" x-cloak class="font-normal text-arena-500">(vacío = no cambiar)</span>
             </label>
             <input id="us-password" x-model="form.password" type="password" class="campo"
                    autocomplete="new-password" placeholder="mínimo 6 caracteres">
@@ -286,12 +288,9 @@
         );
         if (!ok) return;
 
-        const res = await fetch(`/usuarios/api/${u.uid}/toggle`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ activo: !u.activo })
-        });
-        if (!await respuestaOk(res, 'No se pudo cambiar el estado del usuario')) return;
+        const ok = await enviarJSON(`/usuarios/api/${u.uid}/toggle`, 'POST',
+          { activo: !u.activo }, 'No se pudo cambiar el estado del usuario');
+        if (!ok) return;
         const idx = this.usuarios.findIndex(x => x.uid === u.uid);
         if (idx !== -1) this.usuarios[idx].activo = !u.activo;
         avisar(desactivar ? 'Usuario desactivado' : 'Usuario activado', 'exito');

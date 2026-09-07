@@ -2,12 +2,12 @@
 {% block title %}Nómina Semanal{% endblock %}
 
 {% block content %}
-<div x-data="nominaApp()" x-init="init()" @cobrar="pagar($event.detail.emp)">
+<div x-data="nominaApp()" @cobrar="pagar($event.detail)">
 
   <header class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="titulo">Nómina semanal</h1>
-      <p class="mt-1 text-sm text-arena-500" x-text="'Semana ' + semana"></p>
+      <p class="mt-1 text-sm text-arena-600" x-text="'Semana ' + semana"></p>
     </div>
 
     <div class="flex gap-1 rounded-xl bg-arena-200 p-1" role="tablist" aria-label="Vistas de nómina">
@@ -58,17 +58,20 @@
     <button x-show="tab === 'tabla'" x-cloak @click="imprimir()"
             :disabled="!nomina?.empleados?.length || generando"
             class="btn btn-oscuro sm:ml-auto"
-            x-text="generando ? 'Generando PDFs…' : '🖨️ Descargar nóminas'"></button>
+>
+      <svg x-show="!generando" class="h-4 w-4" aria-hidden="true"><use href="#ic-imprimir"></use></svg>
+      <span x-text="generando ? 'Generando PDFs…' : 'Descargar nóminas'"></span>
+    </button>
   </div>
 
   <!-- ====== TAB TABLA ====== -->
   <div x-show="tab === 'tabla'" x-cloak>
 
-    <div x-show="loading" x-cloak class="tarjeta px-6 py-16 text-center text-arena-400">Cargando nómina…</div>
+    <div x-show="loading" x-cloak class="tarjeta px-6 py-16 text-center text-arena-500">Cargando nómina…</div>
 
     <div x-show="!loading && nomina?.empleados?.length" x-cloak>
-      <p class="mb-2 flex items-center gap-1.5 text-xs text-arena-400 lg:hidden">
-        <span>↔</span> Desliza la tabla para ver todos los días
+      <p class="mb-2 flex items-center gap-1.5 text-xs text-arena-500 lg:hidden">
+        <svg class="h-3.5 w-3.5" aria-hidden="true"><use href="#ic-flechas"></use></svg> Desliza la tabla para ver todos los días
       </p>
 
       <div class="tarjeta overflow-hidden">
@@ -101,7 +104,7 @@
                       <template x-for="sid in emp.sucursales_trabajadas" :key="sid">
                         <span class="chip bg-arena-200 text-arena-600" x-text="SUCURSALES[sid] || sid"></span>
                       </template>
-                      <span x-show="!emp.sucursales_trabajadas?.length" class="text-arena-300">—</span>
+                      <span x-show="!emp.sucursales_trabajadas?.length" class="text-arena-400">—</span>
                     </div>
                   </td>
                   <td class="td transition group-hover:bg-marca-50">
@@ -119,11 +122,11 @@
                         <div>
                           <span class="block text-xs capitalize text-arena-600" x-text="emp.dias[fecha].rol"></span>
                           <span class="block text-sm font-semibold tabular-nums text-arena-900">$<span x-text="emp.dias[fecha].tarifa"></span></span>
-                          <span class="block text-[10px] text-arena-400" x-text="SUCURSALES[emp.dias[fecha].sucursal_id] || ''"></span>
+                          <span class="block text-[10px] text-arena-500" x-text="SUCURSALES[emp.dias[fecha].sucursal_id] || ''"></span>
                         </div>
                       </template>
                       <template x-if="!emp.dias[fecha]">
-                        <span class="text-arena-300">–</span>
+                        <span class="text-arena-400">–</span>
                       </template>
                     </td>
                   </template>
@@ -150,7 +153,7 @@
         <template x-for="[sid, total] in Object.entries(nomina?.totales_sucursal || {})" :key="sid">
           <div class="tarjeta flex items-center justify-between p-5">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-widest text-arena-500">Enviar a</p>
+              <p class="text-xs font-semibold uppercase tracking-widest text-arena-600">Enviar a</p>
               <p class="mt-1 font-medium text-arena-900" x-text="SUCURSALES[sid] || sid"></p>
             </div>
             <p class="font-marca text-2xl font-semibold tabular-nums text-marca-700">
@@ -162,70 +165,86 @@
     </div>
 
     <div x-show="!loading && !nomina?.empleados?.length" x-cloak class="tarjeta px-6 py-16 text-center">
-      <div class="mb-3 text-4xl">📭</div>
       <p class="font-medium text-arena-700">Sin registros para esta semana</p>
-      <p class="mt-1 text-sm text-arena-500">Elige otra semana o captura turnos en Registro diario.</p>
+      <p class="mt-1 text-sm text-arena-600">Elige otra semana o captura turnos en Registro diario.</p>
     </div>
   </div>
 
   <!-- ====== TAB PAGOS (solo dueño) ====== -->
   <div x-show="tab === 'pagos'" x-cloak>
 
-    <div x-show="loading" x-cloak class="tarjeta px-6 py-16 text-center text-arena-400">Cargando…</div>
+    <div x-show="loading" x-cloak class="tarjeta px-6 py-16 text-center text-arena-500">Cargando…</div>
 
     <div x-show="!loading" x-cloak>
       <template x-for="[sid, snombre] in Object.entries(SUCURSALES)" :key="sid">
         <section x-show="pendientesPorSucursal(sid).length > 0 && (filtroSucursalPagos === '' || filtroSucursalPagos === sid)"
                  class="mb-6">
-          <h2 class="mb-3 px-1 text-xs font-semibold uppercase tracking-widest text-arena-500" x-text="snombre"></h2>
+          <h2 class="mb-3 px-1 text-xs font-semibold uppercase tracking-widest text-arena-600" x-text="snombre"></h2>
           <div class="space-y-3 overflow-hidden">
             <template x-for="emp in pendientesPorSucursal(sid)" :key="emp.empleado_id">
               <div x-show="!cobrados[emp.empleado_id]"
                    x-transition:leave="transition ease-in duration-300"
                    x-transition:leave-start="opacity-100 translate-x-0"
-                   x-transition:leave-end="opacity-0 translate-x-full"
-                   class="tarjeta overflow-hidden">
-                <div x-data="deslizador()">
-                  <div class="flex items-center justify-between gap-4 px-5 pb-3 pt-4">
-                    <div class="min-w-0">
-                      <p class="truncate font-semibold text-arena-900" x-text="emp.nombre"></p>
-                      <p class="mt-0.5 text-xs text-arena-500"
-                         x-text="Object.keys(emp.dias||{}).length + ' días trabajados'"></p>
+                   x-transition:leave-end="opacity-0 translate-x-full">
+
+                {# El morfo va en la tarjeta misma, igual que en el login, pero
+                   con un diametro acorde a su tamano. #}
+                <div x-data="tarjetaPago()" style="--tam-circulo: 6rem"
+                     :class="confirmado ? 'circulo border-emerald-500 bg-emerald-500 glow-exito' : ''"
+                     class="tarjeta transicion-morfo relative mx-auto overflow-hidden">
+
+                  <div :class="confirmado ? 'opacity-0' : 'opacity-100'" :aria-hidden="confirmado"
+                       class="transition-opacity duration-200">
+                    <div class="flex items-center justify-between gap-4 px-5 pb-3 pt-4">
+                      <div class="min-w-0">
+                        <p class="truncate font-semibold text-arena-900" x-text="emp.nombre"></p>
+                        <p class="mt-0.5 text-xs text-arena-600"
+                           x-text="Object.keys(emp.dias||{}).length + ' días trabajados'"></p>
+                      </div>
+                      <span class="shrink-0 font-marca text-xl font-semibold tabular-nums text-marca-700">
+                        $<span x-text="emp.total.toLocaleString('es-MX')"></span>
+                      </span>
                     </div>
-                    <span class="shrink-0 font-marca text-xl font-semibold tabular-nums text-marca-700">
-                      $<span x-text="emp.total.toLocaleString('es-MX')"></span>
-                    </span>
+
+                    <!-- Deslizar para cobrar: mas alto que antes para que el pulgar
+                         lo agarre sin apuntar en tablet. -->
+                    <div class="relative mx-4 mb-4 h-14 cursor-grab touch-none select-none overflow-hidden rounded-full bg-arena-100 transition active:cursor-grabbing focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/30"
+                         role="button" tabindex="0"
+                         :aria-label="'Deslizar o presionar Enter para marcar como cobrado a ' + emp.nombre"
+                         @pointerdown="iniciar($event, $el)"
+                         @pointermove="mover($event)"
+                         @pointerup="soltar(() => cobrar(emp, $dispatch))"
+                         @pointercancel="cancelar()"
+                         @keydown.enter.prevent="confirmar(() => cobrar(emp, $dispatch))"
+                         @keydown.space.prevent="confirmar(() => cobrar(emp, $dispatch))">
+
+                      <div class="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-marca-100"
+                           :style="{ width: (pos + 50) + 'px', transition: dr ? 'none' : 'width .35s ease' }"></div>
+
+                      <span class="pointer-events-none absolute inset-0 flex items-center justify-center pl-10 text-sm font-medium text-arena-600"
+                            :style="{ opacity: Math.max(0, 1 - pct * 2.5) }">
+                        Desliza para cobrar &nbsp;›
+                      </span>
+
+                      <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-semibold text-marca-800"
+                            :style="{ opacity: Math.max(0, (pct - 0.4) * 2) }">
+                        <svg class="mr-1.5 h-4 w-4" aria-hidden="true"><use href="#ic-check"></use></svg> Cobrado
+                      </span>
+
+                      <div class="pointer-events-none absolute left-1.5 top-1.5 grid h-11 w-11 place-items-center rounded-full bg-marca-600 text-xl font-bold text-white shadow"
+                           :style="{ transform: 'translateX(' + pos + 'px)', transition: dr ? 'none' : 'transform .35s ease' }">
+                        ›
+                      </div>
+                    </div>
                   </div>
 
-                  <!-- Deslizar para cobrar: mas alto que antes para que el pulgar
-                       lo agarre sin apuntar en tablet. -->
-                  <div class="relative mx-4 mb-4 h-14 cursor-grab touch-none select-none overflow-hidden rounded-full bg-arena-100 transition active:cursor-grabbing focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/30"
-                       role="button" tabindex="0"
-                       :aria-label="'Deslizar o presionar Enter para marcar como cobrado a ' + emp.nombre"
-                       @pointerdown="iniciar($event, $el)"
-                       @pointermove="mover($event)"
-                       @pointerup="soltar(() => $dispatch('cobrar', { emp }))"
-                       @pointercancel="cancelar()"
-                       @keydown.enter.prevent="$dispatch('cobrar', { emp })"
-                       @keydown.space.prevent="$dispatch('cobrar', { emp })">
-
-                    <div class="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-marca-100"
-                         :style="{ width: (pos + 50) + 'px', transition: dr ? 'none' : 'width .35s ease' }"></div>
-
-                    <span class="pointer-events-none absolute inset-0 flex items-center justify-center pl-10 text-sm font-medium text-arena-500"
-                          :style="{ opacity: Math.max(0, 1 - pct * 2.5) }">
-                      Desliza para cobrar &nbsp;›
-                    </span>
-
-                    <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-semibold text-marca-800"
-                          :style="{ opacity: Math.max(0, (pct - 0.4) * 2) }">
-                      ✓ Cobrado
-                    </span>
-
-                    <div class="pointer-events-none absolute left-1.5 top-1.5 grid h-11 w-11 place-items-center rounded-full bg-marca-600 text-xl font-bold text-white shadow"
-                         :style="{ transform: 'translateX(' + pos + 'px)', transition: dr ? 'none' : 'transform .35s ease' }">
-                      ›
-                    </div>
+                  <div x-show="confirmado" x-cloak class="absolute inset-0 grid place-items-center">
+                    <svg viewBox="0 0 52 52" class="h-11 w-11 text-white" role="img"
+                         :aria-label="'Cobro registrado de ' + emp.nombre">
+                      <path class="trazo" style="--largo: 36" d="M15 27l8 8 15-16"
+                            fill="none" stroke="currentColor" stroke-width="5"
+                            stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                   </div>
                 </div>
               </div>
@@ -235,21 +254,23 @@
       </template>
 
       <div x-show="todosListos()" x-cloak class="tarjeta px-6 py-16 text-center">
-        <div class="mb-3 text-5xl">✅</div>
+        <span class="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-700">
+          <svg class="h-7 w-7" aria-hidden="true"><use href="#ic-check"></use></svg>
+        </span>
         <p class="font-medium text-arena-700">Todos cobrados esta semana</p>
       </div>
 
       <div x-show="cobradosList().length > 0" x-cloak class="mt-4">
-        <h2 class="mb-3 px-1 text-xs font-semibold uppercase tracking-widest text-arena-400">Ya cobrados</h2>
+        <h2 class="mb-3 px-1 text-xs font-semibold uppercase tracking-widest text-arena-500">Ya cobrados</h2>
         <ul class="tarjeta divide-y divide-arena-200">
           <template x-for="emp in cobradosList()" :key="emp.empleado_id">
             <li class="flex items-center justify-between gap-3 px-5 py-3.5">
               <div class="min-w-0">
-                <p class="truncate text-sm text-arena-400 line-through" x-text="emp.nombre"></p>
-                <p class="text-xs text-arena-300" x-text="Object.keys(emp.dias||{}).length + ' días'"></p>
+                <p class="truncate text-sm text-arena-500 line-through" x-text="emp.nombre"></p>
+                <p class="text-xs text-arena-400" x-text="Object.keys(emp.dias||{}).length + ' días'"></p>
               </div>
               <div class="flex shrink-0 items-center gap-2">
-                <span class="text-sm tabular-nums text-arena-400 line-through">$<span x-text="emp.total.toLocaleString('es-MX')"></span></span>
+                <span class="text-sm tabular-nums text-arena-500 line-through">$<span x-text="emp.total.toLocaleString('es-MX')"></span></span>
                 <button @click="despagar(emp)" class="btn btn-fantasma btn-sm">Deshacer</button>
               </div>
             </li>
@@ -267,9 +288,9 @@
   // Geometria del deslizador: 44px de tirador + 6px de margen a cada lado.
   const TIRADOR = 44, MARGEN = 6;
 
-  function deslizador() {
+  function tarjetaPago() {
     return {
-      ox: 0, tw: 0, dr: false, sx: 0,
+      ox: 0, tw: 0, dr: false, sx: 0, confirmado: false,
       get max() { return Math.max(this.tw - TIRADOR - MARGEN * 2, 1); },
       get pos() { return Math.min(Math.max(this.ox, 0), this.max); },
       get pct() { return this.tw ? this.pos / this.max : 0; },
@@ -283,9 +304,35 @@
       mover(e) { if (this.dr) this.ox = e.clientX - this.sx; },
       soltar(alCobrar) {
         this.dr = false;
-        if (this.pct >= 0.85) alCobrar(); else this.ox = 0;
+        if (this.pct >= 0.85) this.confirmar(alCobrar); else this.ox = 0;
       },
       cancelar() { this.dr = false; this.ox = 0; },
+
+      // Mismo truco que el login: height no interpola desde `auto`, hay que
+      // congelar el tamano real en px para tener a donde volver si falla.
+      confirmar(alCobrar) {
+        if (this.confirmado) return;
+        const c = this.$el;
+        c.style.width = c.offsetWidth + 'px';
+        c.style.height = c.offsetHeight + 'px';
+        void c.offsetHeight;
+        this.confirmado = true;
+        alCobrar();
+      },
+
+      // El padre la invoca si el servidor rechaza la escritura.
+      revertir() {
+        this.confirmado = false;
+        this.ox = 0;
+        setTimeout(() => {
+          this.$el.style.width = '';
+          this.$el.style.height = '';
+        }, 600);
+      },
+
+      cobrar(emp, dispatch) {
+        dispatch('cobrar', { emp, alFallar: () => this.revertir() });
+      },
     };
   }
 
@@ -316,6 +363,12 @@
         if (!this.semanas.includes(iso)) this.semanas.unshift(iso);
 
         await this.cargarNomina();
+
+        // Una escritura puede llegar al servidor aunque el navegador la haya
+        // dado por perdida: salio justo antes de caer la red y se completo al
+        // reconectar. Recargar al volver la conexion evita que la vista quede
+        // mostrando como pendiente un cobro que si se registro.
+        window.addEventListener('online', () => this.cargarNomina());
       },
 
       get colspanTotal() {
@@ -380,20 +433,17 @@
         return empleados.length > 0 && empleados.every(e => this.cobrados[e.empleado_id]);
       },
 
-      async pagar(emp) {
-        this.cobrados = { ...this.cobrados, [emp.empleado_id]: true };
-        const res = await fetch('/nomina/api/cobros', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ semana: this.semana, empleado_id: emp.empleado_id })
-        });
-        // Se marca antes de confirmar para que el deslizador no se congele; si la
-        // escritura falla hay que devolver la tarjeta a pendientes.
-        if (!await respuestaOk(res, `No se pudo registrar el cobro de ${emp.nombre}`)) {
-          const revertido = { ...this.cobrados };
-          delete revertido[emp.empleado_id];
-          this.cobrados = revertido;
-        }
+      // La tarjeta ya se esta volviendo circulo cuando llega aqui. El cambio de
+      // estado se retrasa a proposito: marcarlo de inmediato la ocultaria y se
+      // perderia la animacion.
+      async pagar({ emp, alFallar }) {
+        const ok = await enviarJSON('/nomina/api/cobros', 'POST',
+          { semana: this.semana, empleado_id: emp.empleado_id },
+          `No se pudo registrar el cobro de ${emp.nombre}`);
+        if (!ok) { alFallar?.(); return; }
+        setTimeout(() => {
+          this.cobrados = { ...this.cobrados, [emp.empleado_id]: true };
+        }, 1000);
       },
 
       async despagar(emp) {
@@ -401,22 +451,18 @@
         const nuevo = { ...previo };
         delete nuevo[emp.empleado_id];
         this.cobrados = nuevo;
-        const res = await fetch(`/nomina/api/cobros/${emp.empleado_id}?semana=${this.semana}`, { method: 'DELETE' });
-        if (!await respuestaOk(res, `No se pudo deshacer el cobro de ${emp.nombre}`)) this.cobrados = previo;
+        const ok = await enviar(`/nomina/api/cobros/${emp.empleado_id}?semana=${this.semana}`,
+          { method: 'DELETE' }, `No se pudo deshacer el cobro de ${emp.nombre}`);
+        if (!ok) this.cobrados = previo;
       },
 
       async setPagoSucursal(emp, sucursal_id) {
         const previo = emp.sucursal_pago;
         emp.sucursal_pago = sucursal_id;
-        const res = await fetch('/nomina/api/pago_sucursal', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ semana: this.semana, empleado_id: emp.empleado_id, sucursal_id })
-        });
-        if (!await respuestaOk(res, 'No se pudo cambiar la sucursal de pago')) {
-          emp.sucursal_pago = previo;
-          return;
-        }
+        const ok = await enviarJSON('/nomina/api/pago_sucursal', 'POST',
+          { semana: this.semana, empleado_id: emp.empleado_id, sucursal_id },
+          'No se pudo cambiar la sucursal de pago');
+        if (!ok) { emp.sucursal_pago = previo; return; }
         await this.cargarNomina();
       },
 
@@ -454,25 +500,25 @@
           const roles = [...new Set(dias.map(d => d.rol))]
             .map(r => r.charAt(0).toUpperCase() + r.slice(1))
             .join(', ');
-          const bg = i % 2 === 0 ? '#fff' : '#faf9f7';
-          return `<tr style="border-top:1px solid #e8e4dd; background:${bg};">
+          const bg = i % 2 === 0 ? '#fff' : '#FDFBF6';
+          return `<tr style="border-top:1px solid #E9E3D6; background:${bg};">
             <td style="padding:8px; font-weight:600; font-size:11px;">${emp.nombre}</td>
-            <td style="padding:8px; color:#61594d; font-size:11px;">${nDias} día${nDias!==1?'s':''} · ${roles||'—'}</td>
-            <td style="padding:8px; text-align:right; font-weight:700; color:#94401c; font-size:11px;">$${emp.total.toLocaleString('es-MX')}</td>
-            <td style="padding:6px 12px;"><div style="border-bottom:1px solid #b5ac9c; margin-top:18px;"></div></td>
+            <td style="padding:8px; color:#625D56; font-size:11px;">${nDias} día${nDias!==1?'s':''} · ${roles||'—'}</td>
+            <td style="padding:8px; text-align:right; font-weight:700; color:#85553F; font-size:11px;">$${emp.total.toLocaleString('es-MX')}</td>
+            <td style="padding:6px 12px;"><div style="border-bottom:1px solid #BDB6A6; margin-top:18px;"></div></td>
           </tr>`;
         }).join('');
 
         const contenido = document.createElement('div');
-        contenido.style.cssText = 'font-family:Arial,sans-serif; color:#33302a; padding:24px; width:720px;';
+        contenido.style.cssText = 'font-family:Arial,sans-serif; color:#4A4947; padding:24px; width:720px;';
         contenido.innerHTML = `
-          <div style="text-align:center; padding-bottom:10px; border-bottom:2px solid #94401c; margin-bottom:16px;">
+          <div style="text-align:center; padding-bottom:10px; border-bottom:2px solid #85553F; margin-bottom:16px;">
             <div style="font-size:15px; font-weight:700; letter-spacing:1px;">CALDOS ANGELITA</div>
-            <div style="font-size:11px; color:#61594d; margin-top:4px;">Nómina semana <strong>${semana}</strong> · Pago en <strong>${sucNombre}</strong></div>
+            <div style="font-size:11px; color:#625D56; margin-top:4px;">Nómina semana <strong>${semana}</strong> · Pago en <strong>${sucNombre}</strong></div>
           </div>
-          <table style="width:100%; border-collapse:collapse; border:1px solid #e8e4dd;">
+          <table style="width:100%; border-collapse:collapse; border:1px solid #E9E3D6;">
             <thead>
-              <tr style="background:#94401c;">
+              <tr style="background:#85553F;">
                 <th style="width:30%; padding:7px 8px; text-align:left; font-size:10px; text-transform:uppercase; color:#fff; letter-spacing:0.5px;">Empleado</th>
                 <th style="width:32%; padding:7px 8px; text-align:left; font-size:10px; text-transform:uppercase; color:#fff; letter-spacing:0.5px;">Resumen de la semana</th>
                 <th style="width:13%; padding:7px 8px; text-align:right; font-size:10px; text-transform:uppercase; color:#fff; letter-spacing:0.5px;">Monto</th>
@@ -481,13 +527,13 @@
             </thead>
             <tbody>${filas}</tbody>
           </table>
-          <div style="margin-top:32px; display:flex; justify-content:space-between; font-size:10px; color:#4a443b;">
+          <div style="margin-top:32px; display:flex; justify-content:space-between; font-size:10px; color:#56534F;">
             <div style="text-align:center;">
-              <div style="border-top:1px solid #4a443b; width:190px; margin-bottom:5px;"></div>
+              <div style="border-top:1px solid #56534F; width:190px; margin-bottom:5px;"></div>
               Encargado / Firma
             </div>
             <div style="text-align:center;">
-              <div style="border-top:1px solid #4a443b; width:190px; margin-bottom:5px;"></div>
+              <div style="border-top:1px solid #56534F; width:190px; margin-bottom:5px;"></div>
               Dueño / Vo.Bo.
             </div>
           </div>`;

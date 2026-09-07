@@ -7,64 +7,121 @@
 <body class="min-h-screen bg-arena-100 text-arena-900">
 
   <div class="flex min-h-screen items-center justify-center bg-gradient-to-b from-marca-50 via-arena-100 to-arena-200 px-4 py-10">
-    <div x-data="loginApp()" x-init="init()" class="w-full max-w-md">
+    {# Sin x-init: Alpine ya llama init() solo si existe en el objeto de x-data.
+       Ponerlo ademas lo ejecutaba dos veces en cada carga. #}
+    <div x-data="loginApp()" class="flex w-full max-w-md flex-col items-center">
 
       <div class="mb-7 text-center">
-        <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-marca-800 text-3xl shadow-flotante">🍲</div>
+        <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-marca-800 text-white shadow-flotante">
+          <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 10.5h17a8.5 8.5 0 0 1-17 0Z"/>
+            <path d="M8.5 7.5c0-1 .9-1.5.9-2.5s-.9-1.5-.9-1.5"/>
+            <path d="M12 7.5c0-1 .9-1.5.9-2.5S12 3.5 12 3.5"/>
+            <path d="M15.5 7.5c0-1 .9-1.5.9-2.5s-.9-1.5-.9-1.5"/>
+          </svg>
+        </div>
         <h1 class="font-marca text-3xl font-semibold tracking-tight text-arena-900">Caldos Angelita</h1>
         <p class="mt-1 text-sm text-arena-600">Sistema de nómina</p>
       </div>
 
-      <form @submit.prevent="login" class="tarjeta space-y-5 p-6 sm:p-7">
+      <form @submit.prevent="login" x-ref="tarjeta" :class="claseTarjeta"
+            class="tarjeta transicion-morfo relative w-full overflow-hidden">
 
-        <fieldset>
-          <legend class="etiqueta">Sucursal</legend>
-          <div class="grid grid-cols-2 gap-3">
-            <template x-for="[sid, nombre] in Object.entries(SUCURSALES)" :key="sid">
-              <button type="button" @click="sucursal_id = sid; error = ''"
-                      :aria-pressed="sucursal_id === sid"
-                      :class="sucursal_id === sid
-                        ? 'border-marca-600 bg-marca-50 text-marca-800 ring-4 ring-marca-500/15'
-                        : 'border-arena-300 bg-white text-arena-600 hover:border-arena-400 hover:bg-arena-50'"
-                      class="flex min-h-[64px] flex-col items-center justify-center rounded-xl border-2 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25">
-                <span class="text-base" x-text="nombre"></span>
-                <span class="mt-0.5 text-[11px] font-medium uppercase tracking-wider opacity-70">Sucursal</span>
+        <!-- Contenido del formulario: se desvanece mientras la tarjeta encoge -->
+        <div :class="morfando ? 'opacity-0' : 'opacity-100'"
+             :aria-hidden="morfando"
+             class="space-y-5 p-6 transition-opacity duration-200 sm:p-7">
+
+          <fieldset>
+            <legend class="etiqueta">Sucursal</legend>
+            <div class="grid grid-cols-2 gap-3">
+              <template x-for="[sid, nombre] in Object.entries(SUCURSALES)" :key="sid">
+                <button type="button" @click="sucursal_id = sid; error = ''"
+                        :aria-pressed="sucursal_id === sid"
+                        :class="sucursal_id === sid
+                          ? 'border-marca-600 bg-marca-50 text-marca-800 ring-4 ring-marca-500/15'
+                          : 'border-arena-300 bg-white text-arena-600 hover:border-arena-400 hover:bg-arena-50'"
+                        class="flex min-h-[64px] flex-col items-center justify-center rounded-xl border-2 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25">
+                  <span class="text-base" x-text="nombre"></span>
+                  <span class="mt-0.5 text-[11px] font-medium uppercase tracking-wider opacity-70">Sucursal</span>
+                </button>
+              </template>
+            </div>
+          </fieldset>
+
+          <div>
+            <label for="usuario" class="etiqueta">Usuario</label>
+            <input id="usuario" x-model="usuario" type="text" required autocomplete="username"
+                   autocapitalize="none" autocorrect="off" spellcheck="false"
+                   :aria-invalid="credencialInvalida"
+                   :class="credencialInvalida ? 'border-red-400' : ''"
+                   class="campo" placeholder="tu usuario">
+          </div>
+
+          <div>
+            <label for="password" class="etiqueta">Contraseña</label>
+            <div class="relative">
+              <input id="password" x-model="password" :type="verPassword ? 'text' : 'password'" required
+                     autocomplete="current-password" placeholder="••••••••"
+                     :aria-invalid="credencialInvalida"
+                     :class="credencialInvalida ? 'border-red-400' : ''"
+                     class="campo pr-12">
+              <button type="button" @click="verPassword = !verPassword"
+                      :aria-label="verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                      class="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-xl text-arena-600 transition hover:text-arena-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/20">
+                <svg x-show="!verPassword" x-cloak class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg x-show="verPassword" x-cloak class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M10.7 5.1A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.7 2.7"/>
+                  <path d="M6.6 6.6A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/>
+                  <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+                  <path d="m2 2 20 20"/>
+                </svg>
               </button>
-            </template>
+            </div>
           </div>
-        </fieldset>
 
-        <div>
-          <label for="usuario" class="etiqueta">Usuario</label>
-          <input id="usuario" x-model="usuario" type="text" required autocomplete="username"
-                 autocapitalize="none" autocorrect="off" spellcheck="false"
-                 class="campo" placeholder="tu usuario">
+          <button type="submit" :disabled="morfando || bloqueado" class="btn btn-primario w-full text-base">Entrar</button>
         </div>
 
-        <div>
-          <label for="password" class="etiqueta">Contraseña</label>
-          <div class="relative">
-            <input id="password" x-model="password" :type="verPassword ? 'text' : 'password'" required
-                   autocomplete="current-password" class="campo pr-12" placeholder="••••••••">
-            <button type="button" @click="verPassword = !verPassword"
-                    :aria-label="verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                    class="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-xl text-arena-500 transition hover:text-arena-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/20">
-              <span class="text-lg" x-text="verPassword ? '🙈' : '👁️'"></span>
-            </button>
-          </div>
-        </div>
+        <!-- Estado dentro del círculo -->
+        <div x-show="morfando" x-cloak class="absolute inset-0 grid place-items-center">
 
-        <div x-show="error" x-cloak x-transition
-             class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm font-medium text-red-800">
-          <span>⚠️</span><span x-text="error"></span>
-        </div>
+          <span x-show="estado === 'verificando'" x-cloak
+                class="girando h-12 w-12 rounded-full border-4 border-marca-200 border-t-marca-600"
+                role="status" aria-label="Verificando acceso"></span>
 
-        <button type="submit" :disabled="loading" class="btn btn-primario w-full text-base">
-          <span x-text="loading ? 'Verificando…' : 'Entrar'"></span>
-        </button>
+          <svg x-show="estado === 'exito'" x-cloak viewBox="0 0 52 52"
+               class="h-20 w-20 text-white" role="img" aria-label="Acceso permitido">
+            <path class="trazo" style="--largo: 36" d="M15 27l8 8 15-16"
+                  fill="none" stroke="currentColor" stroke-width="5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+          <svg x-show="estado === 'denegado'" x-cloak viewBox="0 0 52 52"
+               class="h-20 w-20 text-white" role="img" aria-label="Acceso denegado">
+            <path class="trazo" style="--largo: 29" d="M17 17l18 18"
+                  fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+            <path class="trazo trazo-tardio" style="--largo: 29" d="M35 17L17 35"
+                  fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </div>
       </form>
 
-      <p class="mt-6 text-center text-xs text-arena-500">
+      <!-- Fuera de la tarjeta a proposito: si creciera por dentro, el alto medido
+           antes de encoger dejaria de servir al volver a su forma. -->
+      <div x-show="mensajeError" x-cloak x-transition
+           class="mt-4 w-full rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-center text-sm font-medium text-red-800"
+           role="alert" x-text="mensajeError"></div>
+
+      <p class="mt-6 text-center text-xs text-arena-600">
         ¿Problemas para entrar? Pide ayuda al dueño.
       </p>
     </div>
@@ -74,6 +131,32 @@
     const DOMINIO = '@restaurante.local';
     const SUCURSALES = { s1: '6 PTE.', s2: '12 PTE.' };
     const CLAVE_SUCURSAL = 'nomina:ultima_sucursal';
+    const CLAVE_INTENTOS = 'nomina:intentos_fallidos';
+    const CLAVE_BLOQUEO  = 'nomina:bloqueado_hasta';
+
+    // Guarda de interfaz, no medida de seguridad: vive en localStorage y se
+    // esquiva desde las herramientas del navegador. Su valor real es evitar que
+    // el personal dispare el bloqueo de Firebase, que dura mucho mas y avisa en
+    // ingles. Ese sigue de respaldo por si se llega igual.
+    const MAX_INTENTOS = 5;
+    const ESPERA_MS = 60000;
+
+    const TEXTOS_ERROR = {
+      'auth/invalid-credential':     'Usuario o contraseña incorrectos',
+      'auth/wrong-password':         'Usuario o contraseña incorrectos',
+      'auth/user-not-found':         'Usuario o contraseña incorrectos',
+      'auth/invalid-email':          'Usuario o contraseña incorrectos',
+      'auth/user-disabled':          'Este usuario está desactivado. Pide ayuda al dueño.',
+      'auth/network-request-failed': 'Sin conexión. Revisa el internet e intenta de nuevo.',
+      'auth/too-many-requests':      '', // lo cubre el mensaje de bloqueo
+    };
+    const CODIGOS_CREDENCIAL = [
+      'auth/invalid-credential', 'auth/wrong-password',
+      'auth/user-not-found', 'auth/invalid-email',
+    ];
+
+    const guardar = (clave, valor) => { try { localStorage.setItem(clave, valor); } catch (_) {} };
+    const leer    = (clave) => { try { return Number(localStorage.getItem(clave)) || 0; } catch (_) { return 0; } };
 
     function loginApp() {
       return {
@@ -82,7 +165,31 @@
         sucursal_id: '',
         verPassword: false,
         error: '',
-        loading: false,
+        estado: 'idle', // idle | verificando | exito | denegado
+        credencialInvalida: false,
+        intentos: 0,
+        bloqueadoHasta: 0,
+        segundosRestantes: 0,
+        reloj: null,
+
+        get morfando() { return this.estado !== 'idle'; },
+        get bloqueado() { return this.segundosRestantes > 0; },
+
+        // El bloqueo pisa cualquier otro mensaje: es la unica accion posible.
+        get mensajeError() {
+          if (this.bloqueado) {
+            return `Acceso bloqueado por exceder el límite de intentos, `
+                 + `intente nuevamente en ${this.segundosRestantes}s`;
+          }
+          return this.error;
+        },
+
+        get claseTarjeta() {
+          if (this.estado === 'verificando') return 'circulo';
+          if (this.estado === 'exito')       return 'circulo border-emerald-500 bg-emerald-500 glow-exito';
+          if (this.estado === 'denegado')    return 'circulo border-red-500 bg-red-500 sacudida';
+          return '';
+        },
 
         init() {
           // La tablet vive fija en una sucursal: reelegirla en cada acceso es
@@ -91,13 +198,83 @@
             const guardada = localStorage.getItem(CLAVE_SUCURSAL);
             if (guardada && SUCURSALES[guardada]) this.sucursal_id = guardada;
           } catch (_) {}
+
+          // El bloqueo sobrevive a recargar la pagina: si no, bastaria con F5.
+          this.intentos = leer(CLAVE_INTENTOS);
+          this.bloqueadoHasta = leer(CLAVE_BLOQUEO);
+          this.sincronizarBloqueo();
+
           this.$nextTick(() => document.getElementById('usuario')?.focus());
         },
 
+        sincronizarBloqueo() {
+          const restante = this.bloqueadoHasta - Date.now();
+          this.segundosRestantes = restante > 0 ? Math.ceil(restante / 1000) : 0;
+          if (!this.segundosRestantes) {
+            if (this.reloj) { clearInterval(this.reloj); this.reloj = null; }
+            return;
+          }
+          if (this.reloj) return;
+          this.reloj = setInterval(() => this.sincronizarBloqueo(), 250);
+        },
+
+        bloquear() {
+          this.intentos = 0;
+          this.bloqueadoHasta = Date.now() + ESPERA_MS;
+          guardar(CLAVE_INTENTOS, 0);
+          guardar(CLAVE_BLOQUEO, this.bloqueadoHasta);
+          this.sincronizarBloqueo();
+        },
+
+        contarFallo() {
+          this.intentos += 1;
+          if (this.intentos >= MAX_INTENTOS) { this.bloquear(); return; }
+          guardar(CLAVE_INTENTOS, this.intentos);
+        },
+
+        limpiarIntentos() {
+          this.intentos = 0;
+          this.bloqueadoHasta = 0;
+          guardar(CLAVE_INTENTOS, 0);
+          guardar(CLAVE_BLOQUEO, 0);
+        },
+
+        // height no interpola desde `auto`: hay que congelar el tamano real en px
+        // antes de encoger, para que exista un valor al que volver si se deniega.
+        fijarTamano() {
+          const c = this.$refs.tarjeta;
+          c.style.width = c.offsetWidth + 'px';
+          c.style.height = c.offsetHeight + 'px';
+          void c.offsetHeight; // fuerza reflujo: sin esto el navegador agrupa
+        },
+        liberarTamano() {
+          const c = this.$refs.tarjeta;
+          c.style.width = '';
+          c.style.height = '';
+        },
+
+        denegar(mensaje, esCredencial = false) {
+          // Si el fallo activo el bloqueo, no se guarda el motivo: al expirar los
+          // 60s reaparecerian "credenciales incorrectas" de un intento ya viejo.
+          this.error = this.bloqueado ? '' : mensaje;
+          this.credencialInvalida = esCredencial;
+          this.estado = 'denegado';
+          setTimeout(() => {
+            this.estado = 'idle';                       // la tarjeta vuelve a su forma
+            setTimeout(() => this.liberarTamano(), 600); // recien terminada la vuelta
+            document.getElementById('password')?.focus();
+          }, 1150);
+        },
+
         async login() {
+          if (this.morfando || this.bloqueado) return;
           this.error = '';
-          if (!this.sucursal_id) { this.error = 'Selecciona una sucursal'; return; }
-          this.loading = true;
+          this.credencialInvalida = false;
+
+          this.fijarTamano();
+          if (!this.sucursal_id) { this.denegar('Selecciona una sucursal'); return; }
+          this.estado = 'verificando';
+
           try {
             const email = this.usuario.trim().toLowerCase() + DOMINIO;
             const cred = await fbAuth.signInWithEmailAndPassword(email, this.password);
@@ -110,13 +287,27 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión');
             try { localStorage.setItem(CLAVE_SUCURSAL, this.sucursal_id); } catch (_) {}
-            window.location.href = '/dashboard';
+            this.limpiarIntentos();
+
+            // La pausa es solo de esta rama: al denegar, el circulo rojo aparece
+            // en cuanto responde Firebase.
+            this.estado = 'exito';
+            setTimeout(() => { window.location.href = '/dashboard'; }, 1100);
           } catch (e) {
-            this.error = e.code === 'auth/invalid-credential'
-              ? 'Usuario o contraseña incorrectos'
-              : (e.message || 'Error al iniciar sesión');
-          } finally {
-            this.loading = false;
+            const codigo = e.code || '';
+            const malaCredencial = CODIGOS_CREDENCIAL.includes(codigo);
+
+            if (codigo === 'auth/too-many-requests') {
+              // Firebase ya cerro la puerta: seguir intentando solo la alarga.
+              this.bloquear();
+            } else if (malaCredencial) {
+              this.contarFallo();
+            }
+
+            this.denegar(
+              TEXTOS_ERROR[codigo] ?? (e.message || 'Error al iniciar sesión'),
+              malaCredencial
+            );
           }
         }
       }

@@ -6,90 +6,192 @@
 </head>
 <body class="min-h-screen bg-arena-100 text-arena-900">
 
+  {# Iconos como sprite: un solo <path> por icono aunque se dibuje en varios
+     sitios. Emoji no servia -- no toma el color del estado activo y cada
+     sistema lo dibuja distinto. #}
+  <svg width="0" height="0" class="hidden" aria-hidden="true" focusable="false">
+    <symbol id="ic-inicio" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <path d="M9 22V12h6v10"/>
+    </symbol>
+    <symbol id="ic-empleados" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </symbol>
+    <symbol id="ic-nomina" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="6" width="20" height="12" rx="2"/>
+      <circle cx="12" cy="12" r="2.5"/>
+      <path d="M6 12h.01M18 12h.01"/>
+    </symbol>
+    {# Llave y no engranaje: esa pantalla es quien puede entrar y con que permisos. #}
+    <symbol id="ic-usuarios" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="7.5" cy="15.5" r="4.5"/>
+      <path d="m10.8 12.2 8.4-8.4"/>
+      <path d="m17 6 2.5 2.5 2-2L19 4"/>
+    </symbol>
+    <symbol id="ic-mas" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 8.5v7M8.5 12h7"/>
+    </symbol>
+
+    {# Resto del juego de iconos: sustituyen a los emoji que habia repartidos por
+       las plantillas. Un emoji no toma el color del contexto y cada sistema lo
+       dibuja distinto, asi que nunca se veian igual en tablet y en PC. #}
+    <symbol id="ic-marca" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 10.5h17a8.5 8.5 0 0 1-17 0Z"/>
+      <path d="M8.5 7.5c0-1 .9-1.5.9-2.5s-.9-1.5-.9-1.5"/>
+      <path d="M12 7.5c0-1 .9-1.5.9-2.5S12 3.5 12 3.5"/>
+      <path d="M15.5 7.5c0-1 .9-1.5.9-2.5s-.9-1.5-.9-1.5"/>
+    </symbol>
+    <symbol id="ic-registro" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="8" y="2" width="8" height="4" rx="1"/>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+      <path d="M9 12h6M9 16h6"/>
+    </symbol>
+    <symbol id="ic-candado" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="10" width="16" height="11" rx="2"/>
+      <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+    </symbol>
+    <symbol id="ic-lapiz" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+    </symbol>
+    <symbol id="ic-basura" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"/>
+      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+      <path d="M10 11v6M14 11v6"/>
+    </symbol>
+    <symbol id="ic-alerta" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+      <path d="M12 9v4M12 17h.01"/>
+    </symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5"/>
+    </symbol>
+    <symbol id="ic-buscar" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="7"/>
+      <path d="m20 20-3.6-3.6"/>
+    </symbol>
+    <symbol id="ic-imprimir" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9V3h12v6"/>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8" rx="1"/>
+    </symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="ic-flechas" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 7 4 11l4 4M16 7l4 4-4 4M4 11h16"/>
+    </symbol>
+  </svg>
+
   {% set SUCURSALES_NAV = {'s1': '6 PTE.', 's2': '12 PTE.'} %}
-  {% set nav = [
-    ('/dashboard',  'Inicio',   '🏠'),
-    ('/registros/', 'Registro', '📋'),
-    ('/empleados/', 'Empleados','👥'),
-    ('/nomina/',    'Nómina',   '💰'),
-  ] %}
-  {% if current_user.get('role') == 'dueno' %}
-    {% set nav = nav + [('/usuarios/', 'Usuarios', '⚙️')] %}
-  {% endif %}
   {% set ruta = request.path %}
 
-  <header x-data="{ menu: false }" @keydown.escape.window="menu = false"
-          class="sticky top-0 z-40 bg-marca-800 text-white shadow-nav">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
-      <div class="flex h-16 items-center justify-between gap-3">
+  {# El "+" es la entrada a Registro diario, no un elemento extra: con etiquetas,
+     seis destinos no caben en un celular de 390px, y un "+" que abre Registro
+     junto a una pestana "Registro" seria el mismo destino dos veces. #}
+  {% set izquierda = [
+    ('/dashboard',  'Inicio',    'ic-inicio'),
+    ('/empleados/', 'Empleados', 'ic-empleados'),
+  ] %}
+  {% set derecha = [('/nomina/', 'Nómina', 'ic-nomina')] %}
+  {% if current_user.get('role') == 'dueno' %}
+    {% set derecha = derecha + [('/usuarios/', 'Usuarios', 'ic-usuarios')] %}
+  {% endif %}
 
-        <a href="/dashboard" class="flex min-w-0 items-center gap-2.5 rounded-xl py-1 pr-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/15 text-xl">🍲</span>
-          <span class="min-w-0">
-            <span class="block truncate font-marca text-lg font-semibold leading-tight">Caldos Angelita</span>
-            {% if current_user.get('sucursal_id') %}
-            <span class="block text-[11px] font-medium uppercase tracking-wider text-marca-200">
-              {{ SUCURSALES_NAV.get(current_user.get('sucursal_id'), current_user.get('sucursal_id')) }}
-            </span>
-            {% endif %}
-          </span>
-        </a>
+  {# El activo se eleva en un disco que asoma por encima del borde de la barra.
+     Solo el icono sube: la etiqueta se queda alineada con las demas. #}
+  {# `destino` existe solo para el "+": marca activo sobre /registros/ pero enlaza
+     a /registros/?capturar=1, que ademas enfoca el formulario al llegar. #}
+  {% macro pestana(href, texto, icono, ruta, destino=none) %}
+  {% set activo = ruta == href or (href != '/dashboard' and ruta.startswith(href)) %}
+  <a href="{{ destino or href }}"
+     {% if activo %}aria-current="page"{% endif %}
+     class="group flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl px-1 pb-1 pt-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25">
+    <span class="relative grid h-11 w-11 place-items-center transition-transform duration-300 ease-out
+                 {{ '-translate-y-5' if activo else '' }}">
+      {% if activo %}
+      <span class="absolute inset-0 rounded-full bg-marca-600 shadow-disco ring-[3px] ring-white/70" aria-hidden="true"></span>
+      {% endif %}
+      <svg class="relative h-[22px] w-[22px] transition-colors
+                  {{ 'text-white' if activo else 'text-arena-600 group-hover:text-arena-900' }}">
+        <use href="#{{ icono }}"></use>
+      </svg>
+    </span>
+    <span class="max-w-full truncate text-[10px] leading-none tracking-tight transition-colors
+                 {{ 'font-bold text-marca-700' if activo else 'font-medium text-arena-600 group-hover:text-arena-900' }}">{{ texto }}</span>
+  </a>
+  {% endmacro %}
 
-        <!-- Navegación tablet / escritorio -->
-        <nav class="hidden items-center gap-1 md:flex">
-          {% for href, texto, icono in nav %}
-          {% set activo = ruta == href or (href != '/dashboard' and ruta.startswith(href)) %}
-          <a href="{{ href }}"
-             {% if activo %}aria-current="page"{% endif %}
-             class="flex min-h-[44px] items-center rounded-xl px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25
-                    {{ 'bg-white/15 text-white shadow-sm' if activo else 'text-marca-100 hover:bg-white/10 hover:text-white' }}">
-            {{ texto }}
-          </a>
-          {% endfor %}
-          <a href="/logout" onclick="cerrarSesion(event)"
-             class="ml-2 flex min-h-[44px] items-center rounded-xl bg-marca-950/50 px-4 text-sm font-semibold transition hover:bg-marca-950/80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">
-            Salir
-          </a>
-        </nav>
+  <!-- Franja superior: identidad, sucursal activa y salida -->
+  <header class="sticky top-0 z-40 bg-marca-800 text-white shadow-nav">
+    <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+      <a href="/dashboard"
+         class="flex min-w-0 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15">
+          <svg class="h-5 w-5" aria-hidden="true"><use href="#ic-marca"></use></svg>
+        </span>
+        <span class="truncate font-marca text-base font-semibold leading-tight sm:text-lg">Caldos Angelita</span>
+      </a>
 
-        <!-- Botón de menú en celular -->
-        <button @click="menu = !menu" type="button"
-                class="grid h-11 w-11 place-items-center rounded-xl transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 md:hidden"
-                :aria-expanded="menu" aria-controls="menu-movil" aria-label="Abrir menú">
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <g x-show="!menu"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></g>
-            <g x-show="menu" x-cloak><path d="M6 6l12 12"/><path d="M18 6L6 18"/></g>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Panel de navegación en celular -->
-      <nav id="menu-movil" x-show="menu" x-cloak x-transition.duration.150ms
-           class="border-t border-white/10 pb-3 md:hidden">
-        {% for href, texto, icono in nav %}
-        {% set activo = ruta == href or (href != '/dashboard' and ruta.startswith(href)) %}
-        <a href="{{ href }}"
-           {% if activo %}aria-current="page"{% endif %}
-           class="flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-base font-medium
-                  {{ 'bg-white/15 text-white' if activo else 'text-marca-100 active:bg-white/10' }}">
-          <span class="text-lg">{{ icono }}</span>{{ texto }}
-        </a>
-        {% endfor %}
+      <div class="flex shrink-0 items-center gap-2">
+        {% if current_user.get('sucursal_id') %}
+        {# Siempre a la vista a proposito: es lo que evita capturar turnos en la
+           sucursal equivocada. #}
+        <span class="chip bg-white/15 text-marca-50">
+          {{ SUCURSALES_NAV.get(current_user.get('sucursal_id'), current_user.get('sucursal_id')) }}
+        </span>
+        {% endif %}
         <a href="/logout" onclick="cerrarSesion(event)"
-           class="mt-2 flex min-h-[48px] items-center gap-3 rounded-xl bg-marca-950/50 px-3 text-base font-semibold">
-          <span class="text-lg">🚪</span>Salir
+           class="flex min-h-[40px] items-center rounded-xl bg-marca-950/50 px-3.5 text-sm font-semibold transition hover:bg-marca-950/80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">
+          Salir
         </a>
-      </nav>
+      </div>
     </div>
   </header>
 
-  <main class="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+  {# pb-28: sin esto la barra flotante tapa el ultimo elemento de cada pagina. #}
+  <main class="mx-auto max-w-6xl px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-32">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Avisos flotantes -->
+  <!-- Barra de navegación inferior -->
+  {# Vidrio esmerilado: el desenfoque solo se aprecia con contenido pasando por
+     debajo, de ahi que la barra flote separada del borde. Respaldo mas opaco
+     donde no hay backdrop-filter. #}
+  <nav class="fixed inset-x-0 bottom-0 z-40 px-4 pb-3" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));"
+       aria-label="Secciones">
+    <div class="mx-auto flex max-w-lg items-end gap-0.5 rounded-[2rem] border border-white/60 bg-white/85 px-2 py-2
+                shadow-vidrio backdrop-blur-2xl backdrop-saturate-150
+                supports-[backdrop-filter]:bg-white/60">
+      {% for href, texto, icono in izquierda %}{{ pestana(href, texto, icono, ruta) }}{% endfor %}
+      {{ pestana('/registros/', 'Registrar', 'ic-mas', ruta, '/registros/?capturar=1') }}
+      {% for href, texto, icono in derecha %}{{ pestana(href, texto, icono, ruta) }}{% endfor %}
+    </div>
+  </nav>
+
+  {# Arriba en todos los tamanos: abajo chocaba con la barra de navegacion. #}
   <div id="avisos" aria-live="polite"
-       class="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 px-4 pb-5 sm:bottom-auto sm:top-20"></div>
+       class="pointer-events-none fixed inset-x-0 top-[4.5rem] z-[60] flex flex-col items-center gap-2 px-4"></div>
 
   <script>
     function cerrarSesion(e) {
@@ -114,7 +216,8 @@
       el.className = 'aviso-entra pointer-events-auto flex max-w-md items-start gap-2.5 rounded-xl px-4 py-3 '
                    + 'text-sm font-medium shadow-flotante ' + (ESTILOS_AVISO[tipo] || ESTILOS_AVISO.info);
       el.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
-      el.textContent = (tipo === 'error' ? '⚠️ ' : tipo === 'exito' ? '✓ ' : '') + mensaje;
+      // Sin prefijo de simbolo: el color del aviso ya distingue error de exito.
+      el.textContent = mensaje;
       cont.appendChild(el);
       setTimeout(() => {
         el.classList.add('aviso-sale');
@@ -122,14 +225,44 @@
       }, tipo === 'error' ? 5000 : 2600);
     };
 
-    // Las escrituras se hacian con fetch sin revisar la respuesta: cuando la red
-    // o el servidor fallaban, la accion simplemente no ocurria y nadie se enteraba.
-    window.respuestaOk = async function (res, mensajeError) {
+    async function respuestaOk(res, mensajeError) {
       if (res && res.ok) return true;
       let detalle = '';
       try { detalle = (await res.json()).error || ''; } catch (_) {}
       avisar(detalle || mensajeError);
       return false;
+    }
+
+    // Toda escritura pasa por aqui. Dos motivos:
+    //
+    // 1. Sin red, fetch NO devuelve una respuesta con ok:false, sino que rechaza
+    //    con excepcion. Revisar solo `res.ok` dejaba la promesa sin atrapar: no
+    //    salia aviso y la interfaz se quedaba congelada a medio camino (la
+    //    tarjeta de cobro se quedaba en verde para siempre).
+    // 2. Con red intermitente, fetch puede tardar minutos en rendirse. El corte
+    //    a los 12s acota la espera en vez de dejar la vista bloqueada.
+    window.enviar = async function (url, opciones = {}, mensajeError = 'No se pudo completar la acción') {
+      const control = new AbortController();
+      const corte = setTimeout(() => control.abort(), 12000);
+      try {
+        const res = await fetch(url, { ...opciones, signal: control.signal });
+        return await respuestaOk(res, mensajeError);
+      } catch (e) {
+        avisar(e.name === 'AbortError'
+          ? `La red tardó demasiado. ${mensajeError}`
+          : `Sin conexión. ${mensajeError}`);
+        return false;
+      } finally {
+        clearTimeout(corte);
+      }
+    };
+
+    window.enviarJSON = function (url, metodo, cuerpo, mensajeError) {
+      return enviar(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cuerpo),
+      }, mensajeError);
     };
   </script>
 

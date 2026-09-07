@@ -2,13 +2,13 @@
 {% block title %}Registro Diario{% endblock %}
 
 {% block content %}
-<div x-data="registrosApp()" x-init="init()">
+<div x-data="registrosApp()">
 
   <!-- Encabezado + navegación de día -->
   <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="titulo">Registro diario</h1>
-      <p class="mt-1 text-sm capitalize text-arena-500" x-text="fechaLarga"></p>
+      <p class="mt-1 text-sm capitalize text-arena-600" x-text="fechaLarga"></p>
     </div>
 
     <div class="flex items-center gap-2">
@@ -28,20 +28,20 @@
   <div x-show="dayClosed && !modoEdicion" x-cloak x-transition
        class="mb-4 flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-3">
-      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-100 text-lg">🔒</span>
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-100 text-red-700"><svg class="h-5 w-5" aria-hidden="true"><use href="#ic-candado"></use></svg></span>
       <div>
         <p class="font-semibold text-red-900">Día cerrado</p>
         <p class="text-sm text-red-700" x-text="'Cerrado por ' + (corteInfo?.cerrado_nombre || '—')"></p>
       </div>
     </div>
-    <button @click="modoEdicion = true" class="btn btn-peligro btn-sm shrink-0">✏️ Modo edición</button>
+    <button @click="modoEdicion = true" class="btn btn-peligro btn-sm shrink-0"><svg class="h-4 w-4" aria-hidden="true"><use href="#ic-lapiz"></use></svg> Modo edición</button>
   </div>
 
   <!-- Banner modo edición activo -->
   <div x-show="dayClosed && modoEdicion" x-cloak x-transition
        class="mb-4 flex flex-col gap-3 rounded-2xl border border-marca-300 bg-marca-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-3">
-      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-marca-100 text-lg">✏️</span>
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-marca-100 text-marca-700"><svg class="h-5 w-5" aria-hidden="true"><use href="#ic-lapiz"></use></svg></span>
       <div>
         <p class="font-semibold text-marca-900">Modo edición</p>
         <p class="text-sm text-marca-700">El día está cerrado, pero puedes corregir registros.</p>
@@ -97,11 +97,11 @@
 
     <div x-show="duplicado" x-cloak x-transition
          class="mt-4 flex items-start gap-2 rounded-xl border border-yellow-400 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-900">
-      <span>⚠️</span><span x-text="duplicado"></span>
+      <span x-text="duplicado"></span>
     </div>
     <div x-show="exito" x-cloak x-transition
          class="mt-4 flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-      <span>✓</span><span>Registro guardado</span>
+      <span>Registro guardado</span>
     </div>
   </section>
 
@@ -117,14 +117,14 @@
         <p class="text-sm text-arena-600">
           Total <span class="ml-1 font-semibold tabular-nums text-arena-900">$<span x-text="totalMio.toLocaleString('es-MX')"></span></span>
         </p>
-        <button x-show="!dayClosed" x-cloak @click="cerrarDia()" class="btn btn-oscuro btn-sm">🔒 Cerrar día</button>
+        <button x-show="!dayClosed" x-cloak @click="cerrarDia()" class="btn btn-oscuro btn-sm"><svg class="h-4 w-4" aria-hidden="true"><use href="#ic-candado"></use></svg> Cerrar día</button>
       </div>
     </div>
 
     <!-- Celular: tarjetas. Una tabla de 5 columnas se desborda a 375px. -->
     <ul class="divide-y divide-arena-200 md:hidden">
       <template x-if="registrosMios.length === 0">
-        <li class="px-5 py-10 text-center text-sm text-arena-400">Sin registros para esta fecha</li>
+        <li class="px-5 py-10 text-center text-sm text-arena-500">Sin registros para esta fecha</li>
       </template>
       <template x-for="reg in agruparFlat(registrosMios)" :key="reg.key">
         <li class="flex items-center gap-3 px-4 py-3">
@@ -132,13 +132,13 @@
             <p class="truncate font-medium text-arena-900" x-text="reg.nombre_empleado"></p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
               <span class="chip bg-marca-100 capitalize text-marca-800" x-text="reg.rol"></span>
-              <span class="text-xs text-arena-500" x-text="reg.registrado_nombre || '—'"></span>
+              <span class="text-xs text-arena-600" x-text="reg.registrado_nombre || '—'"></span>
             </div>
           </div>
           <span class="shrink-0 font-semibold tabular-nums text-arena-900">$<span x-text="reg.tarifa"></span></span>
           <button @click="eliminar(reg)" :disabled="bloqueado"
                   :aria-label="'Eliminar turno de ' + reg.nombre_empleado"
-                  class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-arena-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30">
+                  class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-arena-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M6 6l12 12M18 6L6 18"/>
             </svg>
@@ -161,18 +161,18 @@
         </thead>
         <tbody class="divide-y divide-arena-200">
           <template x-if="registrosMios.length === 0">
-            <tr><td colspan="5" class="px-4 py-12 text-center text-arena-400">Sin registros para esta fecha</td></tr>
+            <tr><td colspan="5" class="px-4 py-12 text-center text-arena-500">Sin registros para esta fecha</td></tr>
           </template>
           <template x-for="reg in agruparFlat(registrosMios)" :key="reg.key">
             <tr class="transition hover:bg-marca-50/60">
               <td class="td font-medium text-arena-900" x-text="reg.nombre_empleado"></td>
               <td class="td"><span class="chip bg-marca-100 capitalize text-marca-800" x-text="reg.rol"></span></td>
-              <td class="td text-xs text-arena-500" x-text="reg.registrado_nombre || '—'"></td>
+              <td class="td text-xs text-arena-600" x-text="reg.registrado_nombre || '—'"></td>
               <td class="td text-right font-semibold tabular-nums text-arena-900">$<span x-text="reg.tarifa"></span></td>
               <td class="td text-right">
                 <button @click="eliminar(reg)" :disabled="bloqueado"
                         :aria-label="'Eliminar turno de ' + reg.nombre_empleado"
-                        class="grid h-9 w-9 place-items-center rounded-lg text-arena-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30">
+                        class="grid h-9 w-9 place-items-center rounded-lg text-arena-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30">
                   <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
                     <path d="M6 6l12 12M18 6L6 18"/>
                   </svg>
@@ -192,11 +192,11 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="font-medium text-arena-700" x-text="sucursalCorta(OTRA_SUCURSAL)"></span>
         <span class="chip bg-arena-200 text-arena-600" x-text="registrosOtros.length + ' turnos'"></span>
-        <span class="text-xs uppercase tracking-wider text-arena-400">Solo lectura</span>
+        <span class="text-xs uppercase tracking-wider text-arena-500">Solo lectura</span>
       </div>
       <div class="flex items-center gap-3">
         <span class="text-sm font-semibold tabular-nums text-arena-700">$<span x-text="totalOtro.toLocaleString('es-MX')"></span></span>
-        <svg class="h-5 w-5 shrink-0 text-arena-400 transition-transform" :class="abierta ? 'rotate-180' : ''"
+        <svg class="h-5 w-5 shrink-0 text-arena-500 transition-transform" :class="abierta ? 'rotate-180' : ''"
              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <path d="M6 9l6 6 6-6"/>
         </svg>
@@ -205,7 +205,7 @@
 
     <div x-show="abierta" x-cloak x-transition class="overflow-x-auto scroll-suave border-t border-arena-200">
       <table class="w-full text-sm">
-        <thead class="bg-arena-50 text-arena-500">
+        <thead class="bg-arena-50 text-arena-600">
           <tr>
             <th class="th">Empleado</th>
             <th class="th">Rol</th>
@@ -215,13 +215,13 @@
         </thead>
         <tbody class="divide-y divide-arena-200">
           <template x-if="registrosOtros.length === 0">
-            <tr><td colspan="4" class="px-4 py-10 text-center text-arena-400">Sin registros de la otra sucursal</td></tr>
+            <tr><td colspan="4" class="px-4 py-10 text-center text-arena-500">Sin registros de la otra sucursal</td></tr>
           </template>
           <template x-for="reg in agruparFlat(registrosOtros)" :key="reg.key">
             <tr>
               <td class="td font-medium text-arena-700" x-text="reg.nombre_empleado"></td>
               <td class="td"><span class="chip bg-arena-200 capitalize text-arena-600" x-text="reg.rol"></span></td>
-              <td class="td text-xs text-arena-400" x-text="reg.registrado_nombre || '—'"></td>
+              <td class="td text-xs text-arena-500" x-text="reg.registrado_nombre || '—'"></td>
               <td class="td text-right tabular-nums text-arena-700">$<span x-text="reg.tarifa"></span></td>
             </tr>
           </template>
@@ -230,7 +230,7 @@
     </div>
   </section>
 
-  <p class="mt-3 flex items-center justify-end gap-1.5 text-xs text-arena-400">
+  <p class="mt-3 flex items-center justify-end gap-1.5 text-xs text-arena-500">
     <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Actualización en tiempo real
   </p>
 
@@ -242,7 +242,7 @@
        role="dialog" aria-modal="true" aria-labelledby="titulo-permiso">
     <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
       <div class="flex items-start gap-3.5 px-6 pb-4 pt-6">
-        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-100 text-lg">📋</span>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><svg class="h-5 w-5" aria-hidden="true"><use href="#ic-registro"></use></svg></span>
         <div>
           <h3 id="titulo-permiso" class="font-semibold text-arena-900">Segundo descanso en la semana</h3>
           <p class="mt-1 text-sm text-arena-600">Este empleado ya descansó esta semana. ¿El descanso actual es por permiso?</p>
@@ -263,9 +263,11 @@
        role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
     <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
       <div class="flex items-start gap-3.5 px-6 pb-4 pt-6">
-        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg"
-              :class="modal.tipo === 'danger' ? 'bg-red-100' : 'bg-marca-100'"
-              x-text="modal.tipo === 'danger' ? '🗑️' : '🔒'"></span>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+              :class="modal.tipo === 'danger' ? 'bg-red-100 text-red-700' : 'bg-marca-100 text-marca-700'">
+          <svg x-show="modal.tipo === 'danger'" class="h-5 w-5" aria-hidden="true"><use href="#ic-basura"></use></svg>
+          <svg x-show="modal.tipo !== 'danger'" class="h-5 w-5" aria-hidden="true"><use href="#ic-candado"></use></svg>
+        </span>
         <div>
           <h3 id="titulo-modal" class="font-semibold text-arena-900" x-text="modal.titulo"></h3>
           <p class="mt-1 text-sm text-arena-600" x-text="modal.mensaje"></p>
@@ -314,6 +316,24 @@
         }
         this.escucharRegistros();
         this.escucharCorte();
+        this.atenderAtajoCaptura();
+      },
+
+      // Llegada desde el boton "+" de la barra inferior. Enfocar un <select> no
+      // abre el teclado en tablet (solo lo hace al tocarlo), asi que no estorba.
+      atenderAtajoCaptura() {
+        const params = new URLSearchParams(location.search);
+        if (params.get('capturar') !== '1') return;
+        // Se limpia para que un refresco no vuelva a saltar al formulario.
+        params.delete('capturar');
+        const query = params.toString();
+        history.replaceState(null, '', location.pathname + (query ? '?' + query : ''));
+        this.$nextTick(() => {
+          const campo = document.getElementById('empleado');
+          if (!campo || this.bloqueado) return;
+          campo.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          campo.focus({ preventScroll: true });
+        });
       },
 
       get empleadosActivos() { return this.empleados.filter(e => e.activo); },
@@ -416,8 +436,9 @@
           'danger', 'Eliminar'
         );
         if (!ok) return;
-        const res = await fetch(`/registros/api/${encodeURIComponent(reg.key)}`, { method: 'DELETE' });
-        if (await respuestaOk(res, 'No se pudo eliminar el registro')) avisar('Registro eliminado', 'exito');
+        const ok = await enviar(`/registros/api/${encodeURIComponent(reg.key)}`,
+          { method: 'DELETE' }, 'No se pudo eliminar el registro');
+        if (ok) avisar('Registro eliminado', 'exito');
       },
 
       async cerrarDia() {
@@ -427,12 +448,9 @@
           'default', 'Cerrar día'
         );
         if (!ok) return;
-        const res = await fetch('/registros/corte', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fecha: this.fecha })
-        });
-        if (await respuestaOk(res, 'No se pudo cerrar el día')) avisar('Día cerrado', 'exito');
+        const ok = await enviarJSON('/registros/corte', 'POST',
+          { fecha: this.fecha }, 'No se pudo cerrar el día');
+        if (ok) avisar('Día cerrado', 'exito');
       },
 
       async registrar() {
