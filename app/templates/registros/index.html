@@ -436,9 +436,9 @@
           'danger', 'Eliminar'
         );
         if (!ok) return;
-        const ok = await enviar(`/registros/api/${encodeURIComponent(reg.key)}`,
+        const enviado = await enviar(`/registros/api/${encodeURIComponent(reg.key)}`,
           { method: 'DELETE' }, 'No se pudo eliminar el registro');
-        if (ok) avisar('Registro eliminado', 'exito');
+        if (enviado) avisar('Registro eliminado', 'exito');
       },
 
       async cerrarDia() {
@@ -448,9 +448,9 @@
           'default', 'Cerrar día'
         );
         if (!ok) return;
-        const ok = await enviarJSON('/registros/corte', 'POST',
+        const enviado = await enviarJSON('/registros/corte', 'POST',
           { fecha: this.fecha }, 'No se pudo cerrar el día');
-        if (ok) avisar('Día cerrado', 'exito');
+        if (enviado) avisar('Día cerrado', 'exito');
       },
 
       async registrar() {

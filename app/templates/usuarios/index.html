@@ -288,9 +288,9 @@
         );
         if (!ok) return;
 
-        const ok = await enviarJSON(`/usuarios/api/${u.uid}/toggle`, 'POST',
+        const enviado = await enviarJSON(`/usuarios/api/${u.uid}/toggle`, 'POST',
           { activo: !u.activo }, 'No se pudo cambiar el estado del usuario');
-        if (!ok) return;
+        if (!enviado) return;
         const idx = this.usuarios.findIndex(x => x.uid === u.uid);
         if (idx !== -1) this.usuarios[idx].activo = !u.activo;
         avisar(desactivar ? 'Usuario desactivado' : 'Usuario activado', 'exito');

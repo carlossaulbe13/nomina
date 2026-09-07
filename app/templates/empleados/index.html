@@ -291,9 +291,9 @@
           'danger', 'Dar de baja'
         );
         if (!ok) return;
-        const ok = await enviar(`/empleados/api/${emp.id}`, { method: 'DELETE' },
+        const enviado = await enviar(`/empleados/api/${emp.id}`, { method: 'DELETE' },
           'No se pudo dar de baja al empleado');
-        if (!ok) return;
+        if (!enviado) return;
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = false;
         avisar(`${emp.nombre} dado de baja`, 'exito');
@@ -302,10 +302,10 @@
       async reactivar(emp) {
         const ok = await this.pedir('Reactivar empleado', `¿Reactivar a ${emp.nombre}?`, 'success', 'Reactivar');
         if (!ok) return;
-        const ok = await enviarJSON(`/empleados/api/${emp.id}`, 'PUT',
+        const enviado = await enviarJSON(`/empleados/api/${emp.id}`, 'PUT',
           { nombre: emp.nombre, sucursal_id: emp.sucursal_id, activo: true },
           'No se pudo reactivar al empleado');
-        if (!ok) return;
+        if (!enviado) return;
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = true;
         avisar(`${emp.nombre} reactivado`, 'exito');
