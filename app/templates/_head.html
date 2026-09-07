@@ -206,10 +206,13 @@
   }
   .sacudida { animation: sacudida .45s cubic-bezier(.36, .07, .19, .97) both; }
 
+  /* El color va por variable (canales RGB sueltos, que es lo que deja meter un
+     var dentro de rgb()): el login y las tarjetas de cobro usan el verde de
+     exito por defecto, y el borrado conserva su rojo. */
   @keyframes glow-exito {
-    0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, .55); }
-    70%  { box-shadow: 0 0 0 22px rgba(16, 185, 129, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    0%   { box-shadow: 0 0 0 0    rgb(var(--glow, 16 185 129) / .55); }
+    70%  { box-shadow: 0 0 0 22px rgb(var(--glow, 16 185 129) / 0); }
+    100% { box-shadow: 0 0 0 0    rgb(var(--glow, 16 185 129) / 0); }
   }
   .glow-exito { animation: glow-exito 1.2s ease-out infinite; }
 
@@ -243,6 +246,17 @@
     animation: trazo .35s cubic-bezier(.65, 0, .45, 1) forwards;
   }
   .trazo-tardio { animation-delay: .14s; }
+
+  /* ---------- Modal de confirmacion: entrada y salida ---------- */
+  /* Se hace a mano y no con x-transition porque los 150ms por defecto de Alpine
+     se leen como desaparecer de golpe. La salida dura mas que la entrada a
+     proposito: al abrir, la animacion estorba entre el usuario y lo que va a
+     leer; al cerrar es lo unico que queda por ver. Mismo par entra/sale que
+     usan los avisos en base.html. */
+  @keyframes modal-entra { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes modal-sale  { from { opacity: 1; } to { opacity: 0; } }
+  .modal-entra { animation: modal-entra .18s ease-out both; }
+  .modal-sale  { animation: modal-sale .45s ease-in forwards; }
 
   /* ---------- Borrado: el boton se vuelve bote ---------- */
   /* El boton de confirmar encoge a circulo con .transicion-morfo/.circulo (el

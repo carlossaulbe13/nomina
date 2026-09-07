@@ -123,7 +123,7 @@
   </div>
 
   <!-- Modal de confirmación -->
-  <div x-show="confirm.show" x-cloak x-transition.opacity
+  <div x-show="confirm.show" x-cloak :class="confirm.cerrando ? 'modal-sale' : 'modal-entra'"
        class="fixed inset-0 z-50 flex items-end justify-center bg-arena-950/40 p-4 backdrop-blur-sm sm:items-center"
        @click.self="cerrarConfirm(false)" @keydown.escape.window="if (confirm.show) cerrarConfirm(false)"
        role="dialog" aria-modal="true" aria-labelledby="titulo-confirm">
@@ -149,17 +149,18 @@
            bote: mismo par .transicion-morfo/.circulo que el login y las tarjetas
            de cobro. El tamano se congela en px antes de encoger (ver
            cerrarConfirm) porque height no interpola desde `auto`. #}
-        <button x-ref="confirmOk" @click="cerrarConfirm(true)" style="--tam-circulo: 3.25rem; --morfo: .8s"
+        <button x-ref="confirmOk" @click="cerrarConfirm(true)" style="--tam-circulo: 3.25rem; --morfo: .8s; --glow: 180 69 60"
                 :class="[
                   confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700',
-                  confirm.borrando ? 'circulo self-center' : ''
+                  confirm.borrando ? 'circulo self-center pointer-events-none' : '',
+                  confirm.hecho ? 'glow-exito' : ''
                 ]"
                 class="btn transicion-morfo relative overflow-hidden">
           <span x-show="!confirm.borrando" x-text="confirm.btnOk"></span>
 
           {# x-if y no x-show: las animaciones son CSS y solo arrancan al crearse
              el nodo. Con x-show el nodo ya existe y correrian una sola vez. #}
-          <template x-if="confirm.borrando">
+          <template x-if="confirm.borrando && !confirm.hecho">
             <span class="absolute inset-0 grid place-items-center">
               {# El bote va corrido hacia abajo (borde en y=9) y la bisagra de la
                  tapa es su extremo derecho, (20,9). overflow-visible porque al
@@ -180,8 +181,21 @@
             </span>
           </template>
 
+          {# La palomita se dibuja sola, mismo .trazo y mismo trazado que el
+             login: es el remate que ya conoce quien usa la app. #}
+          <template x-if="confirm.hecho">
+            <span class="absolute inset-0 grid place-items-center">
+              <svg viewBox="0 0 52 52" class="h-7 w-7 text-white" role="img"
+                   aria-label="Empleado eliminado">
+                <path class="trazo" style="--largo: 36" d="M15 27l8 8 15-16"
+                      fill="none" stroke="currentColor" stroke-width="5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </template>
+
           {# El aro de carga vive mientras dure la peticion, no un tiempo fijo. #}
-          <span x-show="confirm.borrando" x-cloak role="status" aria-label="Eliminando"
+          <span x-show="confirm.borrando && !confirm.hecho" x-cloak role="status" aria-label="Eliminando"
                 class="bote-aro absolute inset-0 rounded-full border-[3px] border-white/25 border-t-white"></span>
         </button>
       </div>
@@ -236,8 +250,13 @@
   // Lo que dura la animacion completa del bote en _head.html (ahi esta la linea
   // de tiempo). Con movimiento reducido nada de eso corre, asi que esperarlo
   // solo seria un retraso sin nada que ver.
-  const DURACION_BOTE =
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 3000;
+  const SIN_MOVIMIENTO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const DURACION_BOTE = SIN_MOVIMIENTO ? 0 : 3000;
+  // El circulo se sostiene hasta que glow-exito termina de expandirse (su pico
+  // esta al 70% de 1.2s) y solo entonces empieza a irse el modal.
+  const DURACION_EXITO = SIN_MOVIMIENTO ? 0 : 850;
+  // Lo que dura .modal-sale en _head.html.
+  const DURACION_SALIDA = SIN_MOVIMIENTO ? 0 : 450;
 
   function empleadosApp() {
     return {
@@ -253,7 +272,7 @@
       guardando: false,
       confirm: {
         show: false, titulo: '', mensaje: '', detalle: '', nombre: '',
-        borrando: false, retener: false,
+        borrando: false, hecho: false, cerrando: false, retener: false,
         tipo: 'danger', btnOk: 'Confirmar', resolve: null,
       },
 
@@ -342,7 +361,7 @@
         return new Promise(resolve => {
           this.confirm = {
             show: true, titulo: '', mensaje: '', detalle: '', nombre: '',
-            borrando: false, retener: false,
+            borrando: false, hecho: false, cerrando: false, retener: false,
             tipo: 'danger', btnOk: 'Confirmar', ...opciones, resolve
           };
           // El foco arranca en Cancelar: desde aqui se borra sin vuelta atras.
@@ -355,14 +374,29 @@
         // mientras el bote corre no se cancela ni se vuelve a confirmar. Sin
         // esto, un segundo clic congelaria el tamano del boton ya encogido y se
         // quedaria de 52px para siempre.
-        if (this.confirm.borrando) return;
+        if (this.confirm.borrando || this.confirm.cerrando) return;
 
         // `retener` deja el modal abierto al confirmar: la animacion vive en su
         // boton. Quien lo pidio se encarga de cerrarlo al terminar.
         if (valor && this.confirm.retener) this.fijarBotonOk();
-        else this.confirm.show = false;
+        else this.ocultarConfirm();
 
         this.confirm.resolve(valor);
+      },
+
+      // El modal se desvanece en vez de irse de golpe. El estado se limpia al
+      // final de la salida, no al principio: soltar `borrando` antes devolveria
+      // el boton de circulo a pastilla a la vista de todos, justo mientras se
+      // desvanece. `resolve` ya se llamo, asi que esto no retrasa nada.
+      ocultarConfirm() {
+        this.confirm.cerrando = true;
+        setTimeout(() => {
+          this.confirm.show = false;
+          this.confirm.cerrando = false;
+          this.confirm.borrando = false;
+          this.confirm.hecho = false;
+          this.liberarBotonOk();
+        }, DURACION_SALIDA);
       },
 
       // height no interpola desde `auto`: hay que congelar el tamano real en px
@@ -431,21 +465,19 @@
         if (!enviado) {
           // Se corta la animacion a proposito: el aviso de error ya salio y
           // dejar el bote girando diria lo contrario.
-          this.cerrarBorrado();
+          this.ocultarConfirm();
           return;
         }
         await animacion;
-        this.empleados = this.empleados.filter(e => e.id !== emp.id);
-        this.cerrarBorrado();
-        avisar(`${emp.nombre} eliminado`, 'exito');
-      },
 
-      // El tamano en px se suelta despues de cerrar: si se soltara antes, el
-      // boton se veria estirarse de circulo a pastilla justo al desaparecer.
-      cerrarBorrado() {
-        this.confirm.borrando = false;
-        this.confirm.show = false;
-        this.liberarBotonOk();
+        // Remate con la misma mecanica que el login, pero conservando el rojo:
+        // el halo se expande y la palomita se dibuja. Recien despues se va el
+        // modal.
+        this.confirm.hecho = true;
+        this.empleados = this.empleados.filter(e => e.id !== emp.id);
+        await new Promise(listo => setTimeout(listo, DURACION_EXITO));
+        this.ocultarConfirm();
+        avisar(`${emp.nombre} eliminado`, 'exito');
       }
     }
   }
