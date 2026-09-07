@@ -1,0 +1,238 @@
+{# Cabeza compartida por base.html y login.html: tokens de diseno, fuentes y SDKs.
+   Login no extiende base.html, asi que sin este partial la identidad visual se
+   duplicaria en dos lugares y se desincronizaria. #}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#78351c">
+<meta name="color-scheme" content="light">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Inter:wght@400..700&display=swap">
+
+{# Todo esto es CSS plano a proposito.
+   Las clases de componente vivieron un rato en <style type="text/tailwindcss">
+   con @apply, pero el build del CDN tree-shakea la capa `components` contra un
+   archivo de contenido que solo lleva las clases nuevas desde el build anterior;
+   con Alpine reescribiendo el DOM, .btn y .tarjeta desaparecian y los botones
+   quedaban como texto plano. En CSS normal no dependen de ese build.
+   El CDN hace document.head.append() de su <style>, asi que va despues de este
+   y las utilidades de Tailwind siguen ganando sobre estas reglas. #}
+<style>
+  [x-cloak] { display: none !important; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background-color: #f4f2ee;
+    color: #33302a;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------- Campos de formulario ---------- */
+  /* 16px de fuente como minimo: por debajo, iPad hace zoom al enfocar. */
+  .campo {
+    display: block;
+    width: 100%;
+    border-radius: .75rem;
+    border: 1px solid #d6d0c5;
+    background-color: #fff;
+    padding: .625rem .875rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: #33302a;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .05);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo::placeholder { color: #b5ac9c; }
+  .campo:focus {
+    outline: none;
+    border-color: #d26f28;
+    box-shadow: 0 0 0 4px rgba(210, 111, 40, .15);
+  }
+  .campo:disabled { cursor: not-allowed; background-color: #f4f2ee; color: #948a79; }
+
+  /* Se usa junto a .campo (class="campo campo-select"), no en su lugar.
+     La flecha nativa del select se ve distinta en cada navegador y rompe la
+     alineacion con los inputs; se reemplaza por una propia. */
+  .campo-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23786e5f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+  }
+
+  .etiqueta {
+    display: block;
+    margin-bottom: .375rem;
+    font-size: .875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: #61594d;
+  }
+
+  /* ---------- Botones ---------- */
+  /* 44px es el minimo tactil comodo en tablet. Los modificadores se usan junto
+     a .btn (class="btn btn-primario"). */
+  .btn {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    border-radius: .75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: .875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  .btn:disabled { pointer-events: none; opacity: .4; }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(210, 111, 40, .3); }
+
+  .btn-primario          { background-color: #94401c; color: #fff; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .05); }
+  .btn-primario:hover    { background-color: #78351c; }
+  .btn-primario:active   { background-color: #612d1b; }
+
+  .btn-secundario        { border: 1px solid #d6d0c5; background-color: #fff; color: #61594d; }
+  .btn-secundario:hover  { background-color: #faf9f7; }
+  .btn-secundario:active { background-color: #f4f2ee; }
+
+  .btn-oscuro            { background-color: #4a443b; color: #fff; }
+  .btn-oscuro:hover      { background-color: #33302a; }
+
+  .btn-peligro           { background-color: #dc2626; color: #fff; }
+  .btn-peligro:hover     { background-color: #b91c1c; }
+
+  .btn-fantasma          { color: #786e5f; }
+  .btn-fantasma:hover    { background-color: #f4f2ee; color: #33302a; }
+
+  /* Va despues de las variantes para poder reducir alto y padding. */
+  .btn-sm {
+    min-height: 36px;
+    border-radius: .5rem;
+    padding-left: .75rem;
+    padding-right: .75rem;
+    font-size: .75rem;
+    line-height: 1rem;
+  }
+
+  /* ---------- Superficies ---------- */
+  .tarjeta {
+    border-radius: 1rem;
+    border: 1px solid #e8e4dd;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(51, 48, 42, .05), 0 2px 8px -2px rgba(51, 48, 42, .07);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: .25rem .625rem;
+    font-size: .75rem;
+    line-height: 1rem;
+    font-weight: 600;
+  }
+
+  .titulo {
+    font-family: Fraunces, Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -.025em;
+    color: #33302a;
+  }
+  @media (min-width: 640px) {
+    .titulo { font-size: 1.75rem; line-height: 2.25rem; }
+  }
+
+  /* Celdas de tabla. El text-align lo pisan las utilidades text-right/text-center. */
+  .th {
+    padding: .75rem 1rem;
+    text-align: left;
+    font-size: 11px;
+    line-height: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .td { padding: .75rem 1rem; vertical-align: middle; }
+
+  /* ---------- Detalles ---------- */
+  /* Scroll horizontal de tablas: en tablet no hay barra visible por defecto y
+     nadie descubre que la tabla sigue hacia la derecha. */
+  .scroll-suave {
+    scrollbar-width: thin;
+    scrollbar-color: #d6d0c5 transparent;
+  }
+  .scroll-suave::-webkit-scrollbar { height: 8px; }
+  .scroll-suave::-webkit-scrollbar-thumb { background: #d6d0c5; border-radius: 999px; }
+  .scroll-suave::-webkit-scrollbar-track { background: transparent; }
+
+  @keyframes aviso-entra {
+    from { opacity: 0; transform: translateY(12px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes aviso-sale {
+    to { opacity: 0; transform: translateY(6px) scale(.97); }
+  }
+  .aviso-entra { animation: aviso-entra .18s cubic-bezier(.2, .8, .3, 1) both; }
+  .aviso-sale  { animation: aviso-sale .16s ease-in forwards; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          // Terracota tibia: el color de la marca, usable como escala completa
+          // en vez de mezclar amber-700 con amber-900 a ojo.
+          marca: {
+            50:  '#fdf6ee', 100: '#f9e8d5', 200: '#f2cfa9', 300: '#e8ae74',
+            400: '#dd8a46', 500: '#d26f28', 600: '#b8551e', 700: '#94401c',
+            800: '#78351c', 900: '#612d1b', 950: '#35150a',
+          },
+          // Neutros calidos: los grises frios de Tailwind chocan con la terracota.
+          arena: {
+            50:  '#faf9f7', 100: '#f4f2ee', 200: '#e8e4dd', 300: '#d6d0c5',
+            400: '#b5ac9c', 500: '#948a79', 600: '#786e5f', 700: '#61594d',
+            800: '#4a443b', 900: '#33302a', 950: '#1f1d19',
+          },
+        },
+        fontFamily: {
+          sans:  ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          marca: ['Fraunces', 'Georgia', 'Times New Roman', 'serif'],
+        },
+        boxShadow: {
+          tarjeta:  '0 1px 2px rgba(51,48,42,.05), 0 2px 8px -2px rgba(51,48,42,.07)',
+          flotante: '0 20px 40px -16px rgba(51,48,42,.28), 0 2px 8px -2px rgba(51,48,42,.10)',
+          nav:      '0 1px 0 rgba(255,255,255,.08) inset, 0 6px 20px -12px rgba(51,48,42,.6)',
+        },
+      },
+    },
+  };
+</script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>

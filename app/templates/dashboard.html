@@ -2,67 +2,120 @@
 {% block title %}Inicio{% endblock %}
 
 {% block content %}
+{% set sucursales = {'s1': '6 PTE.', 's2': '12 PTE.'} %}
+{% set partes = user.nombre.split(' ') %}
 <div x-data="dashboardApp()">
-  {% set partes = user.nombre.split(' ') %}
-  {% set sucursales = {'s1': '6 PTE.', 's2': '12 PTE.'} %}
-  <h2 class="text-2xl font-bold text-gray-800 mb-1">Bienvenido, {{ partes[0] }} {{ partes[1] if partes|length > 1 else '' }}</h2>
-  <p class="text-gray-500 text-sm mb-6">
-    Rol: <span class="font-semibold capitalize">{{ user.role }}</span>
-    {% if user.sucursal_id %} · Sucursal: {{ sucursales.get(user.sucursal_id, user.sucursal_id) }}{% endif %}
-  </p>
+
+  <header class="mb-7">
+    <p class="text-sm font-medium capitalize text-arena-500" x-text="hoy"></p>
+    <h1 class="titulo mt-1">
+      Hola, {{ partes[0] }}{% if partes|length > 1 %} {{ partes[1] }}{% endif %}
+    </h1>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <span class="chip bg-marca-100 text-marca-800">{{ 'Dueño' if user.role == 'dueno' else 'Encargado' }}</span>
+      {% if user.sucursal_id %}
+      <span class="chip bg-arena-200 text-arena-700">{{ sucursales.get(user.sucursal_id, user.sucursal_id) }}</span>
+      {% endif %}
+    </div>
+  </header>
 
   <!-- Resumen del día -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-    <div class="bg-white rounded-xl shadow p-5 border-l-4 border-amber-500">
-      <p class="text-gray-500 text-sm">Registros hoy</p>
-      <p class="text-3xl font-bold text-gray-800 mt-1" x-text="registrosHoy"></p>
+  <section class="mb-8" aria-labelledby="resumen-hoy">
+    <h2 id="resumen-hoy" class="mb-3 text-xs font-semibold uppercase tracking-widest text-arena-500">Resumen de hoy</h2>
+
+    <div class="grid grid-cols-2 gap-3 sm:gap-4">
+      <div class="tarjeta p-5">
+        <p class="text-sm font-medium text-arena-600">Turnos registrados</p>
+        <p class="mt-2 font-marca text-4xl font-semibold tabular-nums text-arena-900">
+          <span x-show="!cargado" x-cloak class="inline-block h-9 w-14 animate-pulse rounded-lg bg-arena-200 align-middle"></span>
+          <span x-show="cargado" x-cloak x-text="registrosHoy"></span>
+        </p>
+      </div>
+
+      <div class="tarjeta p-5">
+        <p class="text-sm font-medium text-arena-600">Total a pagar</p>
+        <p class="mt-2 font-marca text-4xl font-semibold tabular-nums text-marca-700">
+          <span x-show="!cargado" x-cloak class="inline-block h-9 w-24 animate-pulse rounded-lg bg-arena-200 align-middle"></span>
+          <span x-show="cargado" x-cloak>$<span x-text="totalHoy.toLocaleString('es-MX')"></span></span>
+        </p>
+      </div>
     </div>
-    <div class="bg-white rounded-xl shadow p-5 border-l-4 border-green-500">
-      <p class="text-gray-500 text-sm">Total a pagar hoy</p>
-      <p class="text-3xl font-bold text-gray-800 mt-1">$<span x-text="totalHoy.toLocaleString()"></span></p>
+
+    <!-- Desglose por sucursal: antes solo se veia el gran total del dia -->
+    <div class="tarjeta mt-3 divide-y divide-arena-200 sm:mt-4">
+      <template x-for="[sid, nombre] in Object.entries(SUCURSALES)" :key="sid">
+        <div class="flex items-center justify-between gap-4 px-5 py-3.5">
+          <div class="flex items-center gap-2.5">
+            <span class="h-2.5 w-2.5 rounded-full" :class="sid === 's1' ? 'bg-marca-500' : 'bg-emerald-500'"></span>
+            <span class="font-medium text-arena-800" x-text="nombre"></span>
+            <span class="text-sm text-arena-500" x-text="'· ' + conteoPorSucursal(sid) + ' turnos'"></span>
+          </div>
+          <span class="font-semibold tabular-nums text-arena-900">
+            $<span x-text="totalPorSucursal(sid).toLocaleString('es-MX')"></span>
+          </span>
+        </div>
+      </template>
     </div>
-    <div class="bg-white rounded-xl shadow p-5 border-l-4 border-blue-500">
-      <p class="text-gray-500 text-sm">Fecha</p>
-      <p class="text-xl font-bold text-gray-800 mt-1" x-text="hoy"></p>
-    </div>
-  </div>
+  </section>
 
   <!-- Accesos rápidos -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <a href="/registros/" class="bg-white rounded-xl shadow p-6 hover:shadow-md transition flex flex-col items-center gap-2 text-center">
-      <span class="text-4xl">📋</span>
-      <span class="font-semibold text-gray-800">Registro Diario</span>
-      <span class="text-sm text-gray-500">Registra turnos del día</span>
-    </a>
-    <a href="/empleados/" class="bg-white rounded-xl shadow p-6 hover:shadow-md transition flex flex-col items-center gap-2 text-center">
-      <span class="text-4xl">👥</span>
-      <span class="font-semibold text-gray-800">Empleados</span>
-      <span class="text-sm text-gray-500">Alta y baja de personal</span>
-    </a>
-    <a href="/nomina/" class="bg-white rounded-xl shadow p-6 hover:shadow-md transition flex flex-col items-center gap-2 text-center">
-      <span class="text-4xl">💰</span>
-      <span class="font-semibold text-gray-800">Nómina Semanal</span>
-      <span class="text-sm text-gray-500">Desglose y totales</span>
-    </a>
-  </div>
+  <section aria-labelledby="accesos">
+    <h2 id="accesos" class="mb-3 text-xs font-semibold uppercase tracking-widest text-arena-500">Accesos rápidos</h2>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+      <a href="/registros/"
+         class="tarjeta flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-marca-300 hover:shadow-flotante focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25 sm:flex-col sm:items-start sm:gap-3">
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-marca-100 text-2xl">📋</span>
+        <span>
+          <span class="block font-semibold text-arena-900">Registro diario</span>
+          <span class="mt-0.5 block text-sm text-arena-600">Captura los turnos del día</span>
+        </span>
+      </a>
+      <a href="/empleados/"
+         class="tarjeta flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-marca-300 hover:shadow-flotante focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25 sm:flex-col sm:items-start sm:gap-3">
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-arena-200 text-2xl">👥</span>
+        <span>
+          <span class="block font-semibold text-arena-900">Empleados</span>
+          <span class="mt-0.5 block text-sm text-arena-600">Alta y baja de personal</span>
+        </span>
+      </a>
+      <a href="/nomina/"
+         class="tarjeta flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-marca-300 hover:shadow-flotante focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marca-500/25 sm:flex-col sm:items-start sm:gap-3">
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-100 text-2xl">💰</span>
+        <span>
+          <span class="block font-semibold text-arena-900">Nómina semanal</span>
+          <span class="mt-0.5 block text-sm text-arena-600">Desglose, pagos y PDF</span>
+        </span>
+      </a>
+    </div>
+  </section>
 </div>
 
 <script>
+  const SUCURSALES = { s1: '6 PTE.', s2: '12 PTE.' };
+
   function dashboardApp() {
     return {
-      registrosHoy: 0,
-      totalHoy: 0,
-      hoy: new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      registros: [],
+      cargado: false,
+      hoy: new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
 
       init() {
         const today = new Date().toISOString().split('T')[0];
         db.ref('registros').orderByChild('fecha').equalTo(today).on('value', snap => {
-          const data = snap.val() || {};
-          const vals = Object.values(data);
-          this.registrosHoy = vals.length;
-          this.totalHoy = vals.reduce((s, r) => s + (r.tarifa || 0), 0);
-        });
-      }
+          this.registros = Object.values(snap.val() || {});
+          this.cargado = true;
+        }, () => { this.cargado = true; avisar('No se pudo leer el resumen de hoy'); });
+      },
+
+      get registrosHoy() { return this.registros.length; },
+      get totalHoy() { return this.registros.reduce((s, r) => s + (r.tarifa || 0), 0); },
+
+      conteoPorSucursal(sid) {
+        return this.registros.filter(r => r.sucursal_id === sid).length;
+      },
+      totalPorSucursal(sid) {
+        return this.registros.filter(r => r.sucursal_id === sid).reduce((s, r) => s + (r.tarifa || 0), 0);
+      },
     }
   }
 </script>

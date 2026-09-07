@@ -4,110 +4,184 @@
 {% block content %}
 <div x-data="usuariosApp()" x-init="init()">
 
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Usuarios del sistema</h2>
-    <button @click="abrirModal()" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
-      + Nuevo usuario
+  <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="titulo">Usuarios del sistema</h1>
+      <p class="mt-1 text-sm text-arena-500">Quién puede entrar y con qué permisos</p>
+    </div>
+    <button @click="abrirModal()" class="btn btn-primario w-full sm:w-auto">
+      <span class="text-base leading-none">＋</span> Nuevo usuario
     </button>
-  </div>
+  </header>
 
-  <div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-        <tr>
-          <th class="px-4 py-3 text-left">Nombre</th>
-          <th class="px-4 py-3 text-left">Usuario</th>
-          <th class="px-4 py-3 text-left">Rol</th>
-          <th class="px-4 py-3 text-left">Sucursal</th>
-          <th class="px-4 py-3 text-center">Estado</th>
-          <th class="px-4 py-3 text-right">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <template x-if="loading">
-          <tr><td colspan="6" class="text-center py-8 text-gray-400">Cargando...</td></tr>
-        </template>
-        <template x-for="u in usuarios" :key="u.uid">
-          <tr class="border-t border-gray-100 hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium text-gray-800" x-text="u.nombre"></td>
-            <td class="px-4 py-3 text-gray-600" x-text="u.usuario"></td>
-            <td class="px-4 py-3">
-              <span :class="u.role === 'dueno' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
-                    class="px-2 py-1 rounded-full text-xs font-medium capitalize"
-                    x-text="u.role === 'dueno' ? 'Dueño' : 'Encargado'"></span>
-            </td>
-            <td class="px-4 py-3 text-gray-600 text-xs" x-text="sucursalNombre(u.sucursal_id)"></td>
-            <td class="px-4 py-3 text-center">
-              <span :class="u.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
-                    class="px-2 py-1 rounded-full text-xs font-medium"
-                    x-text="u.activo ? 'Activo' : 'Inactivo'"></span>
-            </td>
-            <td class="px-4 py-3 text-right flex gap-2 justify-end">
-              <button @click="abrirModal(u)" class="text-blue-600 hover:underline text-xs">Editar</button>
-              <button @click="toggleActivo(u)"
-                      :class="u.activo ? 'text-red-500' : 'text-green-600'"
-                      class="hover:underline text-xs"
-                      x-text="u.activo ? 'Desactivar' : 'Activar'"></button>
-            </td>
+  <!-- Celular: tarjetas -->
+  <ul class="tarjeta divide-y divide-arena-200 md:hidden">
+    <template x-if="loading">
+      <li class="px-5 py-12 text-center text-sm text-arena-400">Cargando…</li>
+    </template>
+    <template x-for="u in usuarios" :key="u.uid">
+      <li class="px-4 py-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="truncate font-medium text-arena-900" x-text="u.nombre"></p>
+            <p class="mt-0.5 truncate text-sm text-arena-500" x-text="'@' + u.usuario"></p>
+          </div>
+          <span :class="u.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-arena-200 text-arena-600'"
+                class="chip shrink-0" x-text="u.activo ? 'Activo' : 'Inactivo'"></span>
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <span :class="u.role === 'dueno' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'"
+                class="chip" x-text="u.role === 'dueno' ? 'Dueño' : 'Encargado'"></span>
+          <span class="chip bg-arena-200 text-arena-600" x-text="sucursalNombre(u.sucursal_id)"></span>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <button @click="abrirModal(u)" class="btn btn-secundario btn-sm flex-1">Editar</button>
+          <button @click="toggleActivo(u)" class="btn btn-secundario btn-sm flex-1"
+                  :class="u.activo ? 'text-red-600' : 'text-emerald-700'"
+                  x-text="u.activo ? 'Desactivar' : 'Activar'"></button>
+        </div>
+      </li>
+    </template>
+    <template x-if="!loading && usuarios.length === 0">
+      <li class="px-5 py-12 text-center text-sm text-arena-400">Sin usuarios</li>
+    </template>
+  </ul>
+
+  <!-- Tablet y escritorio: tabla -->
+  <div class="tarjeta hidden overflow-hidden md:block">
+    <div class="overflow-x-auto scroll-suave">
+      <table class="w-full text-sm">
+        <thead class="bg-arena-50 text-arena-600">
+          <tr>
+            <th class="th">Nombre</th>
+            <th class="th">Usuario</th>
+            <th class="th">Rol</th>
+            <th class="th">Sucursal</th>
+            <th class="th text-center">Estado</th>
+            <th class="th text-right">Acciones</th>
           </tr>
-        </template>
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-arena-200">
+          <template x-if="loading">
+            <tr><td colspan="6" class="px-4 py-12 text-center text-arena-400">Cargando…</td></tr>
+          </template>
+          <template x-for="u in usuarios" :key="u.uid">
+            <tr class="transition hover:bg-arena-50">
+              <td class="td font-medium text-arena-900" x-text="u.nombre"></td>
+              <td class="td text-arena-600" x-text="u.usuario"></td>
+              <td class="td">
+                <span :class="u.role === 'dueno' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'"
+                      class="chip" x-text="u.role === 'dueno' ? 'Dueño' : 'Encargado'"></span>
+              </td>
+              <td class="td text-arena-600" x-text="sucursalNombre(u.sucursal_id)"></td>
+              <td class="td text-center">
+                <span :class="u.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-arena-200 text-arena-600'"
+                      class="chip" x-text="u.activo ? 'Activo' : 'Inactivo'"></span>
+              </td>
+              <!-- Igual que en empleados: el td tenia `flex` y rompia la tabla. -->
+              <td class="td">
+                <div class="flex justify-end gap-2">
+                  <button @click="abrirModal(u)" class="btn btn-secundario btn-sm">Editar</button>
+                  <button @click="toggleActivo(u)" class="btn btn-secundario btn-sm"
+                          :class="u.activo ? 'text-red-600' : 'text-emerald-700'"
+                          x-text="u.activo ? 'Desactivar' : 'Activar'"></button>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Modal -->
-  <div x-show="modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" x-cloak>
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4" @click.stop>
-      <h3 class="text-lg font-bold text-gray-800 mb-4" x-text="editando ? 'Editar usuario' : 'Nuevo usuario'"></h3>
-
-      <div class="space-y-4">
+  <!-- Modal de confirmación (antes era un confirm() del navegador) -->
+  <div x-show="confirm.show" x-cloak x-transition.opacity
+       class="fixed inset-0 z-50 flex items-end justify-center bg-arena-950/40 p-4 backdrop-blur-sm sm:items-center"
+       @click.self="cerrarConfirm(false)" @keydown.escape.window="if (confirm.show) cerrarConfirm(false)"
+       role="dialog" aria-modal="true" aria-labelledby="titulo-confirm">
+    <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
+      <div class="flex items-start gap-3.5 px-6 pb-4 pt-6">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg"
+              :class="confirm.tipo === 'danger' ? 'bg-red-100' : 'bg-emerald-100'"
+              x-text="confirm.tipo === 'danger' ? '⚠️' : '✅'"></span>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-          <input x-model="form.nombre" type="text"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-        </div>
-        <div x-show="!editando">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de usuario</label>
-          <input x-model="form.usuario" type="text"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                 placeholder="ej: maria_6pte">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Contraseña <span x-show="editando" class="text-gray-400 font-normal">(dejar vacío para no cambiar)</span>
-          </label>
-          <input x-model="form.password" type="password"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                 placeholder="mínimo 6 caracteres">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-          <select x-model="form.role"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-            <option value="encargado">Encargado</option>
-            <option value="dueno">Dueño</option>
-          </select>
-        </div>
-        <div x-show="form.role === 'encargado'">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
-          <select x-model="form.sucursal_id"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-            <option value="">Seleccionar...</option>
-            {% for sid, sname in sucursales.items() %}
-            <option value="{{ sid }}">{{ sname }}</option>
-            {% endfor %}
-          </select>
+          <h3 id="titulo-confirm" class="font-semibold text-arena-900" x-text="confirm.titulo"></h3>
+          <p class="mt-1 text-sm text-arena-600" x-text="confirm.mensaje"></p>
         </div>
       </div>
+      <div class="flex flex-col-reverse gap-2 border-t border-arena-200 bg-arena-50 px-5 py-4 sm:flex-row sm:justify-end">
+        <button @click="cerrarConfirm(false)" class="btn btn-secundario">Cancelar</button>
+        <button @click="cerrarConfirm(true)" class="btn"
+                :class="confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
+                x-text="confirm.btnOk"></button>
+      </div>
+    </div>
+  </div>
 
-      <div x-show="formError" class="mt-3 text-red-600 text-sm" x-text="formError"></div>
+  <!-- Modal alta / edición -->
+  <div x-show="modal" x-cloak x-transition.opacity
+       class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-arena-950/40 p-4 backdrop-blur-sm sm:items-center"
+       @click.self="cerrarModal()" @keydown.escape.window="if (modal) cerrarModal()"
+       role="dialog" aria-modal="true" aria-labelledby="titulo-usuario">
+    <div class="tarjeta my-auto w-full max-w-md overflow-hidden shadow-flotante">
+      <div class="px-6 pb-5 pt-6">
+        <h3 id="titulo-usuario" class="mb-5 font-marca text-xl font-semibold text-arena-900"
+            x-text="editando ? 'Editar usuario' : 'Nuevo usuario'"></h3>
 
-      <div class="flex justify-end gap-3 mt-6">
-        <button @click="cerrarModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancelar</button>
-        <button @click="guardar()" :disabled="guardando"
-                class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
-          <span x-text="guardando ? 'Guardando...' : 'Guardar'"></span>
-        </button>
+        <div class="space-y-4">
+          <div>
+            <label for="us-nombre" class="etiqueta">Nombre completo</label>
+            <input id="us-nombre" x-model="form.nombre" type="text" class="campo">
+          </div>
+
+          <div x-show="!editando" x-cloak>
+            <label for="us-usuario" class="etiqueta">Nombre de usuario</label>
+            <input id="us-usuario" x-model="form.usuario" type="text" class="campo"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ej: maria_6pte">
+          </div>
+
+          <div>
+            <label for="us-password" class="etiqueta">
+              Contraseña
+              <span x-show="editando" x-cloak class="font-normal text-arena-400">(vacío = no cambiar)</span>
+            </label>
+            <input id="us-password" x-model="form.password" type="password" class="campo"
+                   autocomplete="new-password" placeholder="mínimo 6 caracteres">
+          </div>
+
+          <div>
+            <span class="etiqueta">Rol</span>
+            <div class="grid grid-cols-2 gap-2">
+              <template x-for="[valor, texto] in [['encargado','Encargado'],['dueno','Dueño']]" :key="valor">
+                <button type="button" @click="form.role = valor" :aria-pressed="form.role === valor"
+                        :class="form.role === valor
+                          ? 'border-marca-600 bg-marca-50 text-marca-800'
+                          : 'border-arena-300 bg-white text-arena-600 hover:bg-arena-50'"
+                        class="btn border-2" x-text="texto"></button>
+              </template>
+            </div>
+          </div>
+
+          <div x-show="form.role === 'encargado'" x-cloak>
+            <label for="us-sucursal" class="etiqueta">Sucursal</label>
+            <select id="us-sucursal" x-model="form.sucursal_id" class="campo campo-select">
+              <option value="">Seleccionar…</option>
+              {% for sid, sname in sucursales.items() %}
+              <option value="{{ sid }}">{{ sname }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div x-show="formError" x-cloak
+             class="mt-4 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-800"
+             x-text="formError"></div>
+      </div>
+
+      <div class="flex flex-col-reverse gap-2 border-t border-arena-200 bg-arena-50 px-5 py-4 sm:flex-row sm:justify-end">
+        <button @click="cerrarModal()" class="btn btn-secundario">Cancelar</button>
+        <button @click="guardar()" :disabled="guardando" class="btn btn-primario"
+                x-text="guardando ? 'Guardando…' : 'Guardar'"></button>
       </div>
     </div>
   </div>
@@ -126,16 +200,21 @@
       form: { nombre: '', usuario: '', password: '', role: 'encargado', sucursal_id: '' },
       formError: '',
       guardando: false,
+      confirm: { show: false, titulo: '', mensaje: '', tipo: 'danger', btnOk: 'Confirmar', resolve: null },
 
       async init() {
-        const res = await fetch('/usuarios/api');
-        this.usuarios = await res.json();
-        this.loading = false;
+        try {
+          const res = await fetch('/usuarios/api');
+          if (!res.ok) throw new Error();
+          this.usuarios = await res.json();
+        } catch (_) {
+          avisar('No se pudo cargar la lista de usuarios');
+        } finally {
+          this.loading = false;
+        }
       },
 
-      sucursalNombre(id) {
-        return SUCURSALES[id] || (id ? id : '—');
-      },
+      sucursalNombre(id) { return SUCURSALES[id] || id || '—'; },
 
       abrirModal(u = null) {
         this.editando = u;
@@ -144,6 +223,7 @@
           : { nombre: '', usuario: '', password: '', role: 'encargado', sucursal_id: '' };
         this.formError = '';
         this.modal = true;
+        this.$nextTick(() => document.getElementById('us-nombre')?.focus());
       },
 
       cerrarModal() {
@@ -160,21 +240,13 @@
 
         this.guardando = true;
         try {
-          let res;
-          if (this.editando) {
-            res = await fetch(`/usuarios/api/${this.editando.uid}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.form)
-            });
-          } else {
-            res = await fetch('/usuarios/api', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.form)
-            });
-          }
-          const data = await res.json();
+          const url = this.editando ? `/usuarios/api/${this.editando.uid}` : '/usuarios/api';
+          const res = await fetch(url, {
+            method: this.editando ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.form)
+          });
+          const data = await res.json().catch(() => ({}));
           if (!res.ok) { this.formError = data.error || 'Error al guardar'; return; }
 
           if (this.editando) {
@@ -183,22 +255,46 @@
           } else {
             this.usuarios.push(data);
           }
+          avisar(this.editando ? 'Usuario actualizado' : 'Usuario creado', 'exito');
           this.cerrarModal();
+        } catch (_) {
+          this.formError = 'Sin conexión con el servidor';
         } finally {
           this.guardando = false;
         }
       },
 
+      pedir(titulo, mensaje, tipo = 'danger', btnOk = 'Confirmar') {
+        return new Promise(resolve => {
+          this.confirm = { show: true, titulo, mensaje, tipo, btnOk, resolve };
+        });
+      },
+      cerrarConfirm(valor) {
+        this.confirm.show = false;
+        this.confirm.resolve(valor);
+      },
+
       async toggleActivo(u) {
-        const accion = u.activo ? 'desactivar' : 'activar';
-        if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} a ${u.nombre}?`)) return;
-        await fetch(`/usuarios/api/${u.uid}/toggle`, {
+        const desactivar = u.activo;
+        const ok = await this.pedir(
+          desactivar ? 'Desactivar usuario' : 'Activar usuario',
+          desactivar
+            ? `¿Desactivar a ${u.nombre}? No podrá iniciar sesión.`
+            : `¿Activar a ${u.nombre}? Podrá volver a iniciar sesión.`,
+          desactivar ? 'danger' : 'success',
+          desactivar ? 'Desactivar' : 'Activar'
+        );
+        if (!ok) return;
+
+        const res = await fetch(`/usuarios/api/${u.uid}/toggle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ activo: !u.activo })
         });
+        if (!await respuestaOk(res, 'No se pudo cambiar el estado del usuario')) return;
         const idx = this.usuarios.findIndex(x => x.uid === u.uid);
         if (idx !== -1) this.usuarios[idx].activo = !u.activo;
+        avisar(desactivar ? 'Usuario desactivado' : 'Usuario activado', 'exito');
       }
     }
   }

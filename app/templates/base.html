@@ -1,45 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Nómina{% endblock %} – Restaurante</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+  <title>{% block title %}Nómina{% endblock %} – Caldos Angelita</title>
+  {% include "_head.html" %}
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen bg-arena-100 text-arena-900">
 
-  <nav class="bg-amber-700 text-white shadow-md">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <span class="font-bold text-lg">🍽️ Caldos Angelita</span>
-      <div class="flex items-center gap-4 text-sm">
-        <a href="/dashboard" class="hover:text-amber-200">Inicio</a>
-        <a href="/registros/" class="hover:text-amber-200">Registro Diario</a>
-        <a href="/empleados/" class="hover:text-amber-200">Empleados</a>
-        <a href="/nomina/" class="hover:text-amber-200">Nómina</a>
-        {% if current_user.get('role') == 'dueno' %}
-        <a href="/usuarios/" class="hover:text-amber-200">Usuarios</a>
-        {% endif %}
-        <a href="/logout"
-           onclick="event.preventDefault(); fbAuth.signOut().finally(() => location.href='/logout')"
-           class="bg-amber-900 px-3 py-1 rounded hover:bg-amber-800">Salir</a>
+  {% set SUCURSALES_NAV = {'s1': '6 PTE.', 's2': '12 PTE.'} %}
+  {% set nav = [
+    ('/dashboard',  'Inicio',   '🏠'),
+    ('/registros/', 'Registro', '📋'),
+    ('/empleados/', 'Empleados','👥'),
+    ('/nomina/',    'Nómina',   '💰'),
+  ] %}
+  {% if current_user.get('role') == 'dueno' %}
+    {% set nav = nav + [('/usuarios/', 'Usuarios', '⚙️')] %}
+  {% endif %}
+  {% set ruta = request.path %}
+
+  <header x-data="{ menu: false }" @keydown.escape.window="menu = false"
+          class="sticky top-0 z-40 bg-marca-800 text-white shadow-nav">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="flex h-16 items-center justify-between gap-3">
+
+        <a href="/dashboard" class="flex min-w-0 items-center gap-2.5 rounded-xl py-1 pr-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/15 text-xl">🍲</span>
+          <span class="min-w-0">
+            <span class="block truncate font-marca text-lg font-semibold leading-tight">Caldos Angelita</span>
+            {% if current_user.get('sucursal_id') %}
+            <span class="block text-[11px] font-medium uppercase tracking-wider text-marca-200">
+              {{ SUCURSALES_NAV.get(current_user.get('sucursal_id'), current_user.get('sucursal_id')) }}
+            </span>
+            {% endif %}
+          </span>
+        </a>
+
+        <!-- Navegación tablet / escritorio -->
+        <nav class="hidden items-center gap-1 md:flex">
+          {% for href, texto, icono in nav %}
+          {% set activo = ruta == href or (href != '/dashboard' and ruta.startswith(href)) %}
+          <a href="{{ href }}"
+             {% if activo %}aria-current="page"{% endif %}
+             class="flex min-h-[44px] items-center rounded-xl px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25
+                    {{ 'bg-white/15 text-white shadow-sm' if activo else 'text-marca-100 hover:bg-white/10 hover:text-white' }}">
+            {{ texto }}
+          </a>
+          {% endfor %}
+          <a href="/logout" onclick="cerrarSesion(event)"
+             class="ml-2 flex min-h-[44px] items-center rounded-xl bg-marca-950/50 px-4 text-sm font-semibold transition hover:bg-marca-950/80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">
+            Salir
+          </a>
+        </nav>
+
+        <!-- Botón de menú en celular -->
+        <button @click="menu = !menu" type="button"
+                class="grid h-11 w-11 place-items-center rounded-xl transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 md:hidden"
+                :aria-expanded="menu" aria-controls="menu-movil" aria-label="Abrir menú">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <g x-show="!menu"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></g>
+            <g x-show="menu" x-cloak><path d="M6 6l12 12"/><path d="M18 6L6 18"/></g>
+          </svg>
+        </button>
       </div>
-    </div>
-  </nav>
 
-  <main class="max-w-6xl mx-auto px-4 py-6">
+      <!-- Panel de navegación en celular -->
+      <nav id="menu-movil" x-show="menu" x-cloak x-transition.duration.150ms
+           class="border-t border-white/10 pb-3 md:hidden">
+        {% for href, texto, icono in nav %}
+        {% set activo = ruta == href or (href != '/dashboard' and ruta.startswith(href)) %}
+        <a href="{{ href }}"
+           {% if activo %}aria-current="page"{% endif %}
+           class="flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-base font-medium
+                  {{ 'bg-white/15 text-white' if activo else 'text-marca-100 active:bg-white/10' }}">
+          <span class="text-lg">{{ icono }}</span>{{ texto }}
+        </a>
+        {% endfor %}
+        <a href="/logout" onclick="cerrarSesion(event)"
+           class="mt-2 flex min-h-[48px] items-center gap-3 rounded-xl bg-marca-950/50 px-3 text-base font-semibold">
+          <span class="text-lg">🚪</span>Salir
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
     {% block content %}{% endblock %}
   </main>
 
+  <!-- Avisos flotantes -->
+  <div id="avisos" aria-live="polite"
+       class="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 px-4 pb-5 sm:bottom-auto sm:top-20"></div>
+
   <script>
+    function cerrarSesion(e) {
+      e.preventDefault();
+      fbAuth.signOut().finally(() => location.href = '/logout');
+    }
+
     // La sesion de Flask y la de Firebase deben vivir y morir juntas: si solo
     // queda la de Flask, los listeners fallan con permission_denied y las vistas
     // en vivo se congelan sin avisar.
     fbAuth.onAuthStateChanged(u => { if (!u) location.href = '/logout'; });
+
+    const ESTILOS_AVISO = {
+      error: 'bg-red-600 text-white',
+      exito: 'bg-emerald-600 text-white',
+      info:  'bg-arena-800 text-white',
+    };
+
+    window.avisar = function (mensaje, tipo = 'error') {
+      const cont = document.getElementById('avisos');
+      const el = document.createElement('div');
+      el.className = 'aviso-entra pointer-events-auto flex max-w-md items-start gap-2.5 rounded-xl px-4 py-3 '
+                   + 'text-sm font-medium shadow-flotante ' + (ESTILOS_AVISO[tipo] || ESTILOS_AVISO.info);
+      el.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+      el.textContent = (tipo === 'error' ? '⚠️ ' : tipo === 'exito' ? '✓ ' : '') + mensaje;
+      cont.appendChild(el);
+      setTimeout(() => {
+        el.classList.add('aviso-sale');
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+      }, tipo === 'error' ? 5000 : 2600);
+    };
+
+    // Las escrituras se hacian con fetch sin revisar la respuesta: cuando la red
+    // o el servidor fallaban, la accion simplemente no ocurria y nadie se enteraba.
+    window.respuestaOk = async function (res, mensajeError) {
+      if (res && res.ok) return true;
+      let detalle = '';
+      try { detalle = (await res.json()).error || ''; } catch (_) {}
+      avisar(detalle || mensajeError);
+      return false;
+    };
   </script>
 
 </body>

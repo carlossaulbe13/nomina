@@ -4,125 +4,172 @@
 {% block content %}
 <div x-data="empleadosApp()" x-init="init()">
 
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Empleados</h2>
-    <button @click="abrirModal()" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
-      + Nuevo empleado
+  <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="titulo">Empleados</h1>
+      <p class="mt-1 text-sm text-arena-500" x-text="resumen"></p>
+    </div>
+    <button @click="abrirModal()" class="btn btn-primario w-full sm:w-auto">
+      <span class="text-base leading-none">＋</span> Nuevo empleado
     </button>
-  </div>
+  </header>
 
   <!-- Filtros -->
-  <div class="flex gap-3 mb-4">
-    <input x-model="busqueda" type="text" placeholder="Buscar por nombre..."
-           class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-64">
-    <select x-model="filtroSucursal" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+  <div class="tarjeta mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+    <div class="relative flex-1">
+      <label for="busqueda" class="sr-only">Buscar empleado</label>
+      <span class="pointer-events-none absolute inset-y-0 left-0 grid w-11 place-items-center text-arena-400">🔎</span>
+      <input id="busqueda" x-model="busqueda" type="text" placeholder="Buscar por nombre…"
+             autocapitalize="none" autocorrect="off" class="campo pl-11">
+    </div>
+
+    <label for="filtro-sucursal" class="sr-only">Sucursal</label>
+    <select id="filtro-sucursal" x-model="filtroSucursal" class="campo campo-select sm:w-52">
       <option value="">Todas las sucursales</option>
       {% for sid, sname in sucursales.items() %}
       <option value="{{ sid }}">{{ sname }}</option>
       {% endfor %}
     </select>
-    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-      <input type="checkbox" x-model="soloActivos" class="rounded"> Solo activos
-    </label>
+
+    <button @click="soloActivos = !soloActivos" :aria-pressed="soloActivos"
+            :class="soloActivos
+              ? 'border-marca-600 bg-marca-50 text-marca-800'
+              : 'border-arena-300 bg-white text-arena-600 hover:bg-arena-50'"
+            class="btn shrink-0 border-2">
+      <span x-text="soloActivos ? '✓' : '○'"></span> Solo activos
+    </button>
   </div>
 
-  <!-- Tabla -->
-  <div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-        <tr>
-          <th class="px-4 py-3 text-left">Nombre</th>
-          <th class="px-4 py-3 text-left">Sucursal</th>
-          <th class="px-4 py-3 text-center">Estado</th>
-          <th class="px-4 py-3 text-right">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <template x-if="loading">
-          <tr><td colspan="4" class="text-center py-8 text-gray-400">Cargando...</td></tr>
-        </template>
-        <template x-for="emp in empleadosFiltrados" :key="emp.id">
-          <tr class="border-t border-gray-100 hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium text-gray-800" x-text="emp.nombre"></td>
-            <td class="px-4 py-3 text-gray-600" x-text="sucursalNombre(emp.sucursal_id)"></td>
-            <td class="px-4 py-3 text-center">
-              <span :class="emp.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
-                    class="px-2 py-1 rounded-full text-xs font-medium"
-                    x-text="emp.activo ? 'Activo' : 'Baja'"></span>
-            </td>
-            <td class="px-4 py-3 text-right flex gap-2 justify-end">
-              <button @click="abrirModal(emp)" class="text-amber-600 hover:underline text-xs">Editar</button>
-              <button x-show="emp.activo" @click="darBaja(emp)" class="text-red-500 hover:underline text-xs">Dar de baja</button>
-              <button x-show="!emp.activo" @click="reactivar(emp)" class="text-green-600 hover:underline text-xs">Reactivar</button>
-            </td>
+  <!-- Celular: tarjetas -->
+  <ul class="tarjeta divide-y divide-arena-200 md:hidden">
+    <template x-if="loading">
+      <li class="px-5 py-12 text-center text-sm text-arena-400">Cargando…</li>
+    </template>
+    <template x-for="emp in empleadosFiltrados" :key="emp.id">
+      <li class="px-4 py-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="truncate font-medium text-arena-900" x-text="emp.nombre"></p>
+            <p class="mt-0.5 text-sm text-arena-500" x-text="sucursalNombre(emp.sucursal_id)"></p>
+          </div>
+          <span :class="emp.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-arena-200 text-arena-600'"
+                class="chip shrink-0" x-text="emp.activo ? 'Activo' : 'Baja'"></span>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <button @click="abrirModal(emp)" class="btn btn-secundario btn-sm flex-1">Editar</button>
+          <button x-show="emp.activo" @click="darBaja(emp)" class="btn btn-secundario btn-sm flex-1 text-red-600">Dar de baja</button>
+          <button x-show="!emp.activo" @click="reactivar(emp)" class="btn btn-secundario btn-sm flex-1 text-emerald-700">Reactivar</button>
+        </div>
+      </li>
+    </template>
+    <template x-if="!loading && empleadosFiltrados.length === 0">
+      <li class="px-5 py-12 text-center text-sm text-arena-400">Sin resultados</li>
+    </template>
+  </ul>
+
+  <!-- Tablet y escritorio: tabla -->
+  <div class="tarjeta hidden overflow-hidden md:block">
+    <div class="overflow-x-auto scroll-suave">
+      <table class="w-full text-sm">
+        <thead class="bg-arena-50 text-arena-600">
+          <tr>
+            <th class="th">Nombre</th>
+            <th class="th">Sucursal</th>
+            <th class="th text-center">Estado</th>
+            <th class="th text-right">Acciones</th>
           </tr>
-        </template>
-        <template x-if="!loading && empleadosFiltrados.length === 0">
-          <tr><td colspan="4" class="text-center py-8 text-gray-400">Sin resultados</td></tr>
-        </template>
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-arena-200">
+          <template x-if="loading">
+            <tr><td colspan="4" class="px-4 py-12 text-center text-arena-400">Cargando…</td></tr>
+          </template>
+          <template x-for="emp in empleadosFiltrados" :key="emp.id">
+            <tr class="transition hover:bg-arena-50">
+              <td class="td font-medium text-arena-900" x-text="emp.nombre"></td>
+              <td class="td text-arena-600" x-text="sucursalNombre(emp.sucursal_id)"></td>
+              <td class="td text-center">
+                <span :class="emp.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-arena-200 text-arena-600'"
+                      class="chip" x-text="emp.activo ? 'Activo' : 'Baja'"></span>
+              </td>
+              <!-- El td llevaba `flex`, lo que sacaba la celda del layout de tabla
+                   y descuadraba el ancho de las demas columnas. -->
+              <td class="td">
+                <div class="flex justify-end gap-2">
+                  <button @click="abrirModal(emp)" class="btn btn-secundario btn-sm">Editar</button>
+                  <button x-show="emp.activo" @click="darBaja(emp)" class="btn btn-secundario btn-sm text-red-600">Dar de baja</button>
+                  <button x-show="!emp.activo" @click="reactivar(emp)" class="btn btn-secundario btn-sm text-emerald-700">Reactivar</button>
+                </div>
+              </td>
+            </tr>
+          </template>
+          <template x-if="!loading && empleadosFiltrados.length === 0">
+            <tr><td colspan="4" class="px-4 py-12 text-center text-arena-400">Sin resultados</td></tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Modal de confirmación -->
-  <div x-show="confirm.show" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div @click.stop x-transition class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden">
-      <div class="px-6 pt-6 pb-2">
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-               :class="confirm.tipo === 'danger' ? 'bg-red-100' : 'bg-green-100'">
-            <span x-text="confirm.tipo === 'danger' ? '⚠️' : '✅'" class="text-lg"></span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-gray-800 text-base" x-text="confirm.titulo"></h3>
-            <p class="text-sm text-gray-500 mt-1" x-text="confirm.mensaje"></p>
-          </div>
+  <div x-show="confirm.show" x-cloak x-transition.opacity
+       class="fixed inset-0 z-50 flex items-end justify-center bg-arena-950/40 p-4 backdrop-blur-sm sm:items-center"
+       @click.self="cerrarConfirm(false)" @keydown.escape.window="if (confirm.show) cerrarConfirm(false)"
+       role="dialog" aria-modal="true" aria-labelledby="titulo-confirm">
+    <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
+      <div class="flex items-start gap-3.5 px-6 pb-4 pt-6">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg"
+              :class="confirm.tipo === 'danger' ? 'bg-red-100' : 'bg-emerald-100'"
+              x-text="confirm.tipo === 'danger' ? '⚠️' : '✅'"></span>
+        <div>
+          <h3 id="titulo-confirm" class="font-semibold text-arena-900" x-text="confirm.titulo"></h3>
+          <p class="mt-1 text-sm text-arena-600" x-text="confirm.mensaje"></p>
         </div>
       </div>
-      <div class="flex gap-2 px-6 py-4 justify-end">
-        <button @click="confirm.resolve(false); confirm.show = false"
-                class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
-          Cancelar
-        </button>
-        <button @click="confirm.resolve(true); confirm.show = false"
-                :class="confirm.tipo === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
-                class="px-4 py-2 text-sm rounded-lg text-white font-medium transition"
+      <div class="flex flex-col-reverse gap-2 border-t border-arena-200 bg-arena-50 px-5 py-4 sm:flex-row sm:justify-end">
+        <button @click="cerrarConfirm(false)" class="btn btn-secundario">Cancelar</button>
+        <button @click="cerrarConfirm(true)" class="btn"
+                :class="confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
                 x-text="confirm.btnOk"></button>
       </div>
     </div>
   </div>
 
-  <!-- Modal -->
-  <div x-show="modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" x-cloak>
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4" @click.stop>
-      <h3 class="text-lg font-bold text-gray-800 mb-4" x-text="editando ? 'Editar empleado' : 'Nuevo empleado'"></h3>
+  <!-- Modal alta / edición -->
+  <div x-show="modal" x-cloak x-transition.opacity
+       class="fixed inset-0 z-50 flex items-end justify-center bg-arena-950/40 p-4 backdrop-blur-sm sm:items-center"
+       @click.self="cerrarModal()" @keydown.escape.window="if (modal) cerrarModal()"
+       role="dialog" aria-modal="true" aria-labelledby="titulo-empleado">
+    <div class="tarjeta w-full max-w-md overflow-hidden shadow-flotante">
+      <div class="px-6 pb-5 pt-6">
+        <h3 id="titulo-empleado" class="mb-5 font-marca text-xl font-semibold text-arena-900"
+            x-text="editando ? 'Editar empleado' : 'Nuevo empleado'"></h3>
 
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-          <input x-model="form.nombre" type="text" required
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <div class="space-y-4">
+          <div>
+            <label for="emp-nombre" class="etiqueta">Nombre completo</label>
+            <input id="emp-nombre" x-model="form.nombre" type="text" class="campo"
+                   placeholder="Nombre y apellidos">
+          </div>
+          <div>
+            <label for="emp-sucursal" class="etiqueta">Sucursal</label>
+            <select id="emp-sucursal" x-model="form.sucursal_id" class="campo campo-select">
+              <option value="">Seleccionar…</option>
+              {% for sid, sname in sucursales.items() %}
+              <option value="{{ sid }}">{{ sname }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
-          <select x-model="form.sucursal_id" required
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-            <option value="">Seleccionar...</option>
-            {% for sid, sname in sucursales.items() %}
-            <option value="{{ sid }}">{{ sname }}</option>
-            {% endfor %}
-          </select>
-        </div>
+
+        <div x-show="formError" x-cloak
+             class="mt-4 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-800"
+             x-text="formError"></div>
       </div>
 
-      <div x-show="formError" class="mt-3 text-red-600 text-sm" x-text="formError"></div>
-
-      <div class="flex justify-end gap-3 mt-6">
-        <button @click="cerrarModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancelar</button>
-        <button @click="guardar()" :disabled="guardando"
-                class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
-          <span x-text="guardando ? 'Guardando...' : 'Guardar'"></span>
-        </button>
+      <div class="flex flex-col-reverse gap-2 border-t border-arena-200 bg-arena-50 px-5 py-4 sm:flex-row sm:justify-end">
+        <button @click="cerrarModal()" class="btn btn-secundario">Cancelar</button>
+        <button @click="guardar()" :disabled="guardando" class="btn btn-primario"
+                x-text="guardando ? 'Guardando…' : 'Guardar'"></button>
       </div>
     </div>
   </div>
@@ -147,29 +194,41 @@
       confirm: { show: false, titulo: '', mensaje: '', tipo: 'danger', btnOk: 'Confirmar', resolve: null },
 
       async init() {
-        const res = await fetch('/empleados/api');
-        this.empleados = await res.json();
-        this.loading = false;
+        try {
+          const res = await fetch('/empleados/api');
+          if (!res.ok) throw new Error();
+          this.empleados = await res.json();
+        } catch (_) {
+          avisar('No se pudo cargar la lista de empleados');
+        } finally {
+          this.loading = false;
+        }
       },
 
       get empleadosFiltrados() {
+        const q = this.busqueda.trim().toLowerCase();
         return this.empleados.filter(e => {
           if (this.soloActivos && !e.activo) return false;
           if (this.filtroSucursal && e.sucursal_id !== this.filtroSucursal) return false;
-          if (this.busqueda && !e.nombre.toLowerCase().includes(this.busqueda.toLowerCase())) return false;
+          if (q && !e.nombre.toLowerCase().includes(q)) return false;
           return true;
         });
       },
 
-      sucursalNombre(id) {
-        return SUCURSALES[id] || id || '—';
+      get resumen() {
+        if (this.loading) return 'Cargando…';
+        const n = this.empleadosFiltrados.length;
+        return `${n} ${n === 1 ? 'empleado' : 'empleados'}` + (this.soloActivos ? ' activos' : '');
       },
+
+      sucursalNombre(id) { return SUCURSALES[id] || id || '—'; },
 
       abrirModal(emp = null) {
         this.editando = emp;
         this.form = emp ? { nombre: emp.nombre, sucursal_id: emp.sucursal_id } : { nombre: '', sucursal_id: '' };
         this.formError = '';
         this.modal = true;
+        this.$nextTick(() => document.getElementById('emp-nombre')?.focus());
       },
 
       cerrarModal() {
@@ -185,21 +244,16 @@
         this.guardando = true;
         this.formError = '';
         try {
-          let res;
-          if (this.editando) {
-            res = await fetch(`/empleados/api/${this.editando.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.form)
-            });
-          } else {
-            res = await fetch('/empleados/api', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.form)
-            });
+          const url = this.editando ? `/empleados/api/${this.editando.id}` : '/empleados/api';
+          const res = await fetch(url, {
+            method: this.editando ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.form)
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Error al guardar');
           }
-          if (!res.ok) throw new Error('Error al guardar');
           const data = await res.json();
           if (this.editando) {
             const idx = this.empleados.findIndex(e => e.id === this.editando.id);
@@ -207,9 +261,10 @@
           } else {
             this.empleados.push(data);
           }
+          avisar(this.editando ? 'Empleado actualizado' : 'Empleado agregado', 'exito');
           this.cerrarModal();
         } catch (e) {
-          this.formError = e.message;
+          this.formError = e.message || 'No se pudo guardar';
         } finally {
           this.guardando = false;
         }
@@ -220,6 +275,10 @@
           this.confirm = { show: true, titulo, mensaje, tipo, btnOk, resolve };
         });
       },
+      cerrarConfirm(valor) {
+        this.confirm.show = false;
+        this.confirm.resolve(valor);
+      },
 
       async darBaja(emp) {
         const ok = await this.pedir(
@@ -228,25 +287,25 @@
           'danger', 'Dar de baja'
         );
         if (!ok) return;
-        await fetch(`/empleados/api/${emp.id}`, { method: 'DELETE' });
+        const res = await fetch(`/empleados/api/${emp.id}`, { method: 'DELETE' });
+        if (!await respuestaOk(res, 'No se pudo dar de baja al empleado')) return;
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = false;
+        avisar(`${emp.nombre} dado de baja`, 'exito');
       },
 
       async reactivar(emp) {
-        const ok = await this.pedir(
-          'Reactivar empleado',
-          `¿Reactivar a ${emp.nombre}?`,
-          'success', 'Reactivar'
-        );
+        const ok = await this.pedir('Reactivar empleado', `¿Reactivar a ${emp.nombre}?`, 'success', 'Reactivar');
         if (!ok) return;
-        await fetch(`/empleados/api/${emp.id}`, {
+        const res = await fetch(`/empleados/api/${emp.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nombre: emp.nombre, sucursal_id: emp.sucursal_id, activo: true })
         });
+        if (!await respuestaOk(res, 'No se pudo reactivar al empleado')) return;
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = true;
+        avisar(`${emp.nombre} reactivado`, 'exito');
       }
     }
   }
