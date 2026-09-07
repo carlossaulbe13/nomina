@@ -24,7 +24,9 @@
         {% if current_user.get('role') == 'dueno' %}
         <a href="/usuarios/" class="hover:text-amber-200">Usuarios</a>
         {% endif %}
-        <a href="/logout" class="bg-amber-900 px-3 py-1 rounded hover:bg-amber-800">Salir</a>
+        <a href="/logout"
+           onclick="event.preventDefault(); fbAuth.signOut().finally(() => location.href='/logout')"
+           class="bg-amber-900 px-3 py-1 rounded hover:bg-amber-800">Salir</a>
       </div>
     </div>
   </nav>
@@ -32,6 +34,13 @@
   <main class="max-w-6xl mx-auto px-4 py-6">
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    // La sesion de Flask y la de Firebase deben vivir y morir juntas: si solo
+    // queda la de Flask, los listeners fallan con permission_denied y las vistas
+    // en vivo se congelan sin avisar.
+    fbAuth.onAuthStateChanged(u => { if (!u) location.href = '/logout'; });
+  </script>
 
 </body>
 </html>

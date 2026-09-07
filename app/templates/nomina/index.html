@@ -316,11 +316,21 @@
         if (!this.semanas.includes(iso)) this.semanas.unshift(iso);
 
         await this.cargarNomina();
-        this.escucharCambios();
       },
 
+      // Solo dispara recargas: el payload se descarta. Se acota a la semana
+      // visible en vez de escuchar el historial completo.
       escucharCambios() {
-        db.ref('registros').on('value', () => { this.cargarNomina(); });
+        const f = this.nomina?.fechas;
+        if (!f?.length) return;
+        const rango = `${f[0]}..${f[f.length - 1]}`;
+        // Sin este guard hay bucle infinito: on('value') dispara al enlazarse,
+        // y el callback vuelve a pasar por aqui via cargarNomina().
+        if (rango === this._rangoEscuchado) return;
+        if (this._ref) this._ref.off();
+        this._rangoEscuchado = rango;
+        this._ref = db.ref('registros').orderByChild('fecha').startAt(f[0]).endAt(f[f.length - 1]);
+        this._ref.on('value', () => { this.cargarNomina(); });
       },
 
       getISOWeek(d) {
@@ -345,6 +355,8 @@
           this.nomina = await resNomina.json();
           const lista = await resCobros.json();
           this.cobrados = Object.fromEntries(lista.map(id => [id, true]));
+          // Re-engancha el listener si cambio la semana (es no-op si no cambio).
+          this.escucharCambios();
         } finally {
           this.loading = false;
         }

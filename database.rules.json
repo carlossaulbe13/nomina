@@ -1,0 +1,15 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "registros": {
+      ".read": "auth != null && auth.token.role != null",
+      ".indexOn": ["fecha"]
+    },
+
+    "cortes": {
+      ".read": "auth != null && auth.token.role != null"
+    }
+  }
+}
