@@ -290,6 +290,14 @@
   const ORDEN_ROLES = ['cajero', 'brasero', 'mole', 'aguas', 'loza', 'apoyo', 'mesero', 'descanso', 'permiso'];
 
   function registrosApp() {
+  // Las referencias de Firebase viven fuera del objeto reactivo a proposito.
+  // Alpine envuelve en Proxy todo lo que guardes en `this`, y un Query de
+  // Firebase deja de recibir actualizaciones cuando sus internos (_repo,
+  // _query) se leen a traves del proxy: llega la primera instantanea y nada
+  // mas. Aqui conservan su identidad y aun asi se pueden soltar con .off().
+    let refRegistros = null;
+    let refCorte = null;
+
     return {
       fecha: new Date().toISOString().split('T')[0],
       empleados: [],
@@ -301,8 +309,6 @@
       dayClosed: false,
       modoEdicion: false,
       corteInfo: null,
-      refRegistros: null,
-      refCorte: null,
       modal: { show: false, titulo: '', mensaje: '', tipo: 'default', btnConfirmar: 'Confirmar', resolve: null },
       modalPermiso: { show: false, resolve: null },
 
@@ -385,9 +391,9 @@
       // Sin el .off() previo cada cambio de fecha dejaba vivo el listener anterior,
       // y el ultimo en disparar decidia que registros se veian.
       escucharRegistros() {
-        if (this.refRegistros) this.refRegistros.off();
-        this.refRegistros = db.ref('registros').orderByChild('fecha').equalTo(this.fecha);
-        this.refRegistros.on('value', snap => {
+        if (refRegistros) refRegistros.off();
+        refRegistros = db.ref('registros').orderByChild('fecha').equalTo(this.fecha);
+        refRegistros.on('value', snap => {
           const data = snap.val() || {};
           this.registros = Object.entries(data)
             .map(([key, val]) => ({ key, ...val }))
@@ -397,9 +403,9 @@
       },
 
       escucharCorte() {
-        if (this.refCorte) this.refCorte.off();
-        this.refCorte = db.ref(`cortes/${this.fecha}/${SESSION_SUCURSAL}`);
-        this.refCorte.on('value', snap => {
+        if (refCorte) refCorte.off();
+        refCorte = db.ref(`cortes/${this.fecha}/${SESSION_SUCURSAL}`);
+        refCorte.on('value', snap => {
           const data = snap.val();
           this.dayClosed = !!(data && data.cerrado);
           this.corteInfo = data;

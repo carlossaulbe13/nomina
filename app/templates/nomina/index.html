@@ -337,6 +337,14 @@
   }
 
   function nominaApp() {
+  // Las referencias de Firebase viven fuera del objeto reactivo a proposito.
+  // Alpine envuelve en Proxy todo lo que guardes en `this`, y un Query de
+  // Firebase deja de recibir actualizaciones cuando sus internos (_repo,
+  // _query) se leen a traves del proxy: llega la primera instantanea y nada
+  // mas. Aqui conservan su identidad y aun asi se pueden soltar con .off().
+    let refSemana = null;
+    let rangoEscuchado = '';
+
     return {
       semana: '',
       semanas: [],
@@ -383,11 +391,11 @@
         const rango = `${f[0]}..${f[f.length - 1]}`;
         // Sin este guard hay bucle infinito: on('value') dispara al enlazarse,
         // y el callback vuelve a pasar por aqui via cargarNomina().
-        if (rango === this._rangoEscuchado) return;
-        if (this._ref) this._ref.off();
-        this._rangoEscuchado = rango;
-        this._ref = db.ref('registros').orderByChild('fecha').startAt(f[0]).endAt(f[f.length - 1]);
-        this._ref.on('value', () => { this.cargarNomina(); });
+        if (rango === rangoEscuchado) return;
+        if (refSemana) refSemana.off();
+        rangoEscuchado = rango;
+        refSemana = db.ref('registros').orderByChild('fecha').startAt(f[0]).endAt(f[f.length - 1]);
+        refSemana.on('value', () => { this.cargarNomina(); });
       },
 
       getISOWeek(d) {
