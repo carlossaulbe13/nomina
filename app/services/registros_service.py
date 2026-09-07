@@ -23,8 +23,9 @@ def _semana(fecha_str):
 
 
 def get_registros_by_date(fecha):
-    all_data = db.reference('registros').get() or {}
-    result = [{'key': k, **v} for k, v in all_data.items() if v.get('fecha') == fecha]
+    # Requiere el índice .indexOn ["fecha"] en /registros.
+    data = db.reference('registros').order_by_child('fecha').equal_to(fecha).get() or {}
+    result = [{'key': k, **v} for k, v in data.items()]
     result.sort(key=lambda x: x.get('nombre_empleado', ''))
     return result
 
@@ -39,18 +40,21 @@ def create_registro(data):
         return {'error': f"Ya hay un registro para este empleado el {fecha}"}
 
     rol = data['rol']
+    semana = _semana(fecha)
     registro = {
         'empleado_id': emp_id,
         'nombre_empleado': data['nombre_empleado'],
         'rol': rol,
         'tarifa': ROLES.get(rol, 0),
         'fecha': fecha,
-        'semana': _semana(fecha),
+        'semana': semana,
         'sucursal_id': data.get('sucursal_id', ''),
         'registrado_por': data.get('registrado_por', ''),
         'registrado_nombre': data.get('registrado_nombre', ''),
     }
     db.reference(f'registros/{key}').set(registro)
+    # Índice de semanas que consume nomina_service.get_semanas_disponibles.
+    db.reference(f'semanas/{semana}').set(True)
     return {'key': key, **registro}
 
 

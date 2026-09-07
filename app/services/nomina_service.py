@@ -4,13 +4,6 @@ from datetime import date, timedelta
 DIAS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 
-def _semana(fecha_str):
-    d = date.fromisoformat(fecha_str)
-    shifted = d + timedelta(days=2)
-    iso = shifted.isocalendar()
-    return f"{iso[0]}-W{iso[1]:02d}"
-
-
 def _semana_a_fechas(semana_str):
     year, week = semana_str.split('-W')
     # El lunes ISO menos 2 días = el sábado que inicia la semana (sáb→vie)
@@ -19,10 +12,20 @@ def _semana_a_fechas(semana_str):
     return [(saturday + timedelta(days=i)).isoformat() for i in range(7)]
 
 
+def _registros_de_semana(semana_str):
+    """Trae solo los registros de esa semana. Las fechas son ISO (YYYY-MM-DD),
+    así que el orden lexicográfico de Firebase coincide con el cronológico.
+    Requiere el índice .indexOn ["fecha"] en /registros."""
+    fechas = _semana_a_fechas(semana_str)
+    return db.reference('registros') \
+        .order_by_child('fecha') \
+        .start_at(fechas[0]) \
+        .end_at(fechas[-1]) \
+        .get() or {}
+
+
 def get_nomina_semanal(semana, sucursal_id=None):
-    all_data = db.reference('registros').get() or {}
-    fechas_set = set(_semana_a_fechas(semana))
-    data = {k: v for k, v in all_data.items() if v.get('fecha') in fechas_set}
+    data = _registros_de_semana(semana)
     pago_overrides = db.reference(f'pago_sucursal/{semana}').get() or {}
     fechas = _semana_a_fechas(semana)
     empleados_map = {}
@@ -68,9 +71,10 @@ def get_nomina_semanal(semana, sucursal_id=None):
 
 
 def get_semanas_disponibles():
-    data = db.reference('registros').get() or {}
-    semanas = {_semana(v['fecha']) for v in data.values() if 'fecha' in v}
-    return sorted(semanas, reverse=True)
+    # Índice mantenido por registros_service.create_registro: una clave por
+    # semana en vez de recorrer todos los registros históricos.
+    semanas = db.reference('semanas').get() or {}
+    return sorted(semanas.keys(), reverse=True)
 
 
 def set_pago_sucursal(semana, empleado_id, sucursal_id):
@@ -78,12 +82,12 @@ def set_pago_sucursal(semana, empleado_id, sucursal_id):
 
 
 def delete_semana(semana):
-    all_data = db.reference('registros').get() or {}
-    fechas_set = set(_semana_a_fechas(semana))
-    keys = [k for k, v in all_data.items() if v.get('fecha') in fechas_set]
-    for key in keys:
-        db.reference(f'registros/{key}').delete()
+    data = _registros_de_semana(semana)
+    if data:
+        # Un solo update multi-path (valor None = borrar) en vez de N requests.
+        db.reference('registros').update({key: None for key in data})
     db.reference(f'pago_sucursal/{semana}').delete()
+    db.reference(f'semanas/{semana}').delete()
 
 
 def get_cobros(semana):
