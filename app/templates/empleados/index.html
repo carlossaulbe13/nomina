@@ -149,7 +149,7 @@
            bote: mismo par .transicion-morfo/.circulo que el login y las tarjetas
            de cobro. El tamano se congela en px antes de encoger (ver
            cerrarConfirm) porque height no interpola desde `auto`. #}
-        <button x-ref="confirmOk" @click="cerrarConfirm(true)" style="--tam-circulo: 3.25rem"
+        <button x-ref="confirmOk" @click="cerrarConfirm(true)" style="--tam-circulo: 3.25rem; --morfo: .8s"
                 :class="[
                   confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700',
                   confirm.borrando ? 'circulo self-center' : ''
@@ -233,11 +233,11 @@
 <script>
   const SUCURSALES = {{ sucursales | tojson }};
 
-  // Lo que tardan en _head.html el encogido del boton (.55s) mas el destape del
-  // bote (.16s de espera + .72s). Con movimiento reducido nada de eso corre, asi
-  // que esperarlo solo seria un retraso sin nada que ver.
+  // Lo que dura la animacion completa del bote en _head.html (ahi esta la linea
+  // de tiempo). Con movimiento reducido nada de eso corre, asi que esperarlo
+  // solo seria un retraso sin nada que ver.
   const DURACION_BOTE =
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 3000;
 
   function empleadosApp() {
     return {

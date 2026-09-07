@@ -219,12 +219,13 @@
   /* La tarjeta encoge hasta volverse circulo. height no interpola desde `auto`,
      asi que el JS fija el alto real en px antes de encoger; el !important es lo
      que permite a estas reglas ganarle a ese estilo en linea.
-     El diametro se pasa por variable: el login usa el de por defecto y las
-     tarjetas de cobro, mucho mas chicas, declaran el suyo. */
+     El diametro y la duracion se pasan por variable: el login y las tarjetas de
+     cobro usan los de por defecto, y quien necesite otros los declara en linea
+     (el boton de borrar encoge mas despacio para dar tiempo a ver el bote). */
   .transicion-morfo {
-    transition: width .55s cubic-bezier(.65, 0, .35, 1),
-                height .55s cubic-bezier(.65, 0, .35, 1),
-                border-radius .55s cubic-bezier(.65, 0, .35, 1),
+    transition: width var(--morfo, .55s) cubic-bezier(.65, 0, .35, 1),
+                height var(--morfo, .55s) cubic-bezier(.65, 0, .35, 1),
+                border-radius var(--morfo, .55s) cubic-bezier(.65, 0, .35, 1),
                 background-color .3s ease,
                 border-color .3s ease;
   }
@@ -254,12 +255,20 @@
      coordenadas se miden desde la esquina del viewBox, asi que el SVG que las
      use tiene que empezar en "0 0" o los ejes salen corridos. */
 
+  /* Linea de tiempo completa, 3s:
+       0.00-0.80  el boton encoge a circulo (--morfo)
+       0.35-0.75  aparece el bote
+       0.60-0.90  entra el aro de carga
+       0.80-2.80  la tapa salta, SE QUEDA ABIERTA y se cierra
+     La pausa con la tapa abierta es lo que hace que se aprecie; alargar por
+     igual las tres partes solo se sentiria lento. */
+
   /* El icono aparece cuando el boton ya va a medio encoger. */
   @keyframes bote-entra {
     from { opacity: 0; transform: scale(.55); }
     to   { opacity: 1; transform: none; }
   }
-  .bote { animation: bote-entra .22s cubic-bezier(.34, 1.4, .64, 1) .12s both; }
+  .bote { animation: bote-entra .4s cubic-bezier(.34, 1.4, .64, 1) .35s both; }
 
   /* La tapa gira sobre su extremo derecho, no sobre el centro: una que se
      levanta por el medio se lee como tapa rota, no como bote destapandose.
@@ -268,28 +277,29 @@
      levantarla. Al abrirse, la tapa se sale del viewBox por arriba; por eso el
      SVG lleva overflow-visible y le sobra sitio dentro del circulo. */
   @keyframes bote-tapa {
-    0%   { transform: rotate(0deg) translate(0, 0); }
-    28%  { transform: rotate(26deg) translate(-.5px, -1.2px); }
-    54%  { transform: rotate(19deg) translate(-.3px, -.9px); }
-    100% { transform: rotate(0deg) translate(0, 0); }
+    0%       { transform: rotate(0deg) translate(0, 0); }
+    15%      { transform: rotate(26deg) translate(-.5px, -1.2px); }  /* salta */
+    24%, 62% { transform: rotate(22deg) translate(-.4px, -1px); }    /* se queda */
+    100%     { transform: rotate(0deg) translate(0, 0); }            /* cierra */
   }
   .bote-tapa {
     transform-box: view-box;
     transform-origin: 20px 9px;
-    animation: bote-tapa .72s cubic-bezier(.34, 1.3, .5, 1) .16s both;
+    animation: bote-tapa 2s cubic-bezier(.34, 1.3, .5, 1) .8s both;
   }
 
   /* El cuerpo se hunde cuando salta la tapa. Sin esto la tapa parece despegarse
      de un bote que no se entera. */
   @keyframes bote-cuerpo {
-    0%, 100% { transform: none; }
-    30%      { transform: translateY(.9px) scaleY(.9); }
-    62%      { transform: translateY(0) scaleY(1.04); }
+    0%, 8%    { transform: none; }
+    17%       { transform: translateY(.9px) scaleY(.9); }
+    30%       { transform: translateY(0) scaleY(1.04); }
+    42%, 100% { transform: none; }
   }
   .bote-cuerpo {
     transform-box: view-box;
     transform-origin: 12px 21px;
-    animation: bote-cuerpo .72s cubic-bezier(.34, 1.3, .5, 1) .16s both;
+    animation: bote-cuerpo 2s cubic-bezier(.34, 1.3, .5, 1) .8s both;
   }
 
   /* El aro de carga aparece cuando el boton ya es casi circulo: girando desde el
@@ -298,7 +308,9 @@
      pisaria este `animation`. */
   @keyframes bote-aro { from { opacity: 0; } to { opacity: 1; } }
   .bote-aro {
-    animation: girar .7s linear infinite, bote-aro .2s ease-out .4s both;
+    /* Vuelta mas lenta que el spinner del login: al ritmo de 3s, .7s se veia
+       acelerado al lado del bote. */
+    animation: girar .9s linear infinite, bote-aro .3s ease-out .6s both;
   }
 
   @media (prefers-reduced-motion: reduce) {
