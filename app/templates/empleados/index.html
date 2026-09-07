@@ -59,6 +59,12 @@
           <button @click="abrirModal(emp)" class="btn btn-secundario btn-sm flex-1">Editar</button>
           <button x-show="emp.activo" @click="darBaja(emp)" class="btn btn-secundario btn-sm flex-1 text-red-600">Dar de baja</button>
           <button x-show="!emp.activo" @click="reactivar(emp)" class="btn btn-secundario btn-sm flex-1 text-emerald-700">Reactivar</button>
+          {% if current_user.get('role') == 'dueno' %}
+          <button @click="eliminar(emp)" class="btn btn-secundario btn-sm shrink-0 px-2.5 text-red-600"
+                  :aria-label="'Eliminar a ' + emp.nombre" title="Eliminar definitivamente">
+            <svg class="h-4 w-4" aria-hidden="true"><use href="#ic-basura"></use></svg>
+          </button>
+          {% endif %}
         </div>
       </li>
     </template>
@@ -98,6 +104,12 @@
                   <button @click="abrirModal(emp)" class="btn btn-secundario btn-sm">Editar</button>
                   <button x-show="emp.activo" @click="darBaja(emp)" class="btn btn-secundario btn-sm text-red-600">Dar de baja</button>
                   <button x-show="!emp.activo" @click="reactivar(emp)" class="btn btn-secundario btn-sm text-emerald-700">Reactivar</button>
+                  {% if current_user.get('role') == 'dueno' %}
+                  <button @click="eliminar(emp)" class="btn btn-secundario btn-sm shrink-0 px-2.5 text-red-600"
+                          :aria-label="'Eliminar a ' + emp.nombre" title="Eliminar definitivamente">
+                    <svg class="h-4 w-4" aria-hidden="true"><use href="#ic-basura"></use></svg>
+                  </button>
+                  {% endif %}
                 </div>
               </td>
             </tr>
@@ -125,10 +137,12 @@
         <div>
           <h3 id="titulo-confirm" class="font-semibold text-arena-900" x-text="confirm.titulo"></h3>
           <p class="mt-1 text-sm text-arena-600" x-text="confirm.mensaje"></p>
+          <p x-show="confirm.detalle" x-cloak x-text="confirm.detalle"
+             class="mt-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800"></p>
         </div>
       </div>
       <div class="flex flex-col-reverse gap-2 border-t border-arena-200 bg-arena-50 px-5 py-4 sm:flex-row sm:justify-end">
-        <button @click="cerrarConfirm(false)" class="btn btn-secundario">Cancelar</button>
+        <button x-ref="confirmCancelar" @click="cerrarConfirm(false)" class="btn btn-secundario">Cancelar</button>
         <button @click="cerrarConfirm(true)" class="btn"
                 :class="confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
                 x-text="confirm.btnOk"></button>
@@ -193,7 +207,7 @@
       form: { nombre: '', sucursal_id: '' },
       formError: '',
       guardando: false,
-      confirm: { show: false, titulo: '', mensaje: '', tipo: 'danger', btnOk: 'Confirmar', resolve: null },
+      confirm: { show: false, titulo: '', mensaje: '', detalle: '', tipo: 'danger', btnOk: 'Confirmar', resolve: null },
 
       async init() {
         try {
@@ -274,9 +288,16 @@
         }
       },
 
-      pedir(titulo, mensaje, tipo = 'danger', btnOk = 'Confirmar') {
+      // Objeto y no argumentos sueltos: ya son cinco y en la llamada no se
+      // distingue cual es cual.
+      pedir(opciones) {
         return new Promise(resolve => {
-          this.confirm = { show: true, titulo, mensaje, tipo, btnOk, resolve };
+          this.confirm = {
+            show: true, titulo: '', mensaje: '', detalle: '',
+            tipo: 'danger', btnOk: 'Confirmar', ...opciones, resolve
+          };
+          // El foco arranca en Cancelar: desde aqui se borra sin vuelta atras.
+          this.$nextTick(() => this.$refs.confirmCancelar?.focus());
         });
       },
       cerrarConfirm(valor) {
@@ -285,11 +306,11 @@
       },
 
       async darBaja(emp) {
-        const ok = await this.pedir(
-          'Dar de baja',
-          `¿Dar de baja a ${emp.nombre}? Seguirá apareciendo en nóminas anteriores pero no podrá registrar turnos nuevos.`,
-          'danger', 'Dar de baja'
-        );
+        const ok = await this.pedir({
+          titulo: 'Dar de baja',
+          mensaje: `¿Dar de baja a ${emp.nombre}? Seguirá apareciendo en nóminas anteriores pero no podrá registrar turnos nuevos.`,
+          btnOk: 'Dar de baja',
+        });
         if (!ok) return;
         const enviado = await enviar(`/empleados/api/${emp.id}`, { method: 'DELETE' },
           'No se pudo dar de baja al empleado');
@@ -300,7 +321,11 @@
       },
 
       async reactivar(emp) {
-        const ok = await this.pedir('Reactivar empleado', `¿Reactivar a ${emp.nombre}?`, 'success', 'Reactivar');
+        const ok = await this.pedir({
+          titulo: 'Reactivar empleado',
+          mensaje: `¿Reactivar a ${emp.nombre}?`,
+          tipo: 'success', btnOk: 'Reactivar',
+        });
         if (!ok) return;
         const enviado = await enviarJSON(`/empleados/api/${emp.id}`, 'PUT',
           { nombre: emp.nombre, sucursal_id: emp.sucursal_id, activo: true },
@@ -309,6 +334,21 @@
         const idx = this.empleados.findIndex(e => e.id === emp.id);
         if (idx !== -1) this.empleados[idx].activo = true;
         avisar(`${emp.nombre} reactivado`, 'exito');
+      },
+
+      async eliminar(emp) {
+        const ok = await this.pedir({
+          titulo: `Eliminar a ${emp.nombre}`,
+          mensaje: 'Desaparece de la lista y ya no se le podrán capturar turnos. Los turnos que ya tiene registrados se conservan, así que las nóminas de semanas pasadas no cambian.',
+          detalle: 'Esta acción no se puede deshacer. Si solo dejó de trabajar, usa «Dar de baja».',
+          btnOk: 'Eliminar',
+        });
+        if (!ok) return;
+        const enviado = await enviar(`/empleados/api/${emp.id}/definitivo`, { method: 'DELETE' },
+          'No se pudo eliminar al empleado');
+        if (!enviado) return;
+        this.empleados = this.empleados.filter(e => e.id !== emp.id);
+        avisar(`${emp.nombre} eliminado`, 'exito');
       }
     }
   }

@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify, session
-from app.auth import login_required
+from app.auth import login_required, role_required
 from app.services.empleados_service import (
-    get_all_empleados, create_empleado, update_empleado, deactivate_empleado
+    get_all_empleados, create_empleado, update_empleado, deactivate_empleado,
+    delete_empleado
 )
 
 empleados_bp = Blueprint('empleados', __name__)
@@ -42,4 +43,13 @@ def api_update(empleado_id):
 @login_required
 def api_delete(empleado_id):
     deactivate_empleado(empleado_id)
+    return jsonify({'success': True})
+
+
+# Borrado definitivo, separado de la baja y solo para el dueno: la baja se
+# deshace desde la misma pantalla, esto no.
+@empleados_bp.route('/api/<empleado_id>/definitivo', methods=['DELETE'])
+@role_required('dueno')
+def api_delete_definitivo(empleado_id):
+    delete_empleado(empleado_id)
     return jsonify({'success': True})

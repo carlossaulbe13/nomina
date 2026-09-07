@@ -28,3 +28,11 @@ def update_empleado(emp_id, data):
 
 def deactivate_empleado(emp_id):
     db.reference(f'empleados/{emp_id}').update({'activo': False})
+
+
+def delete_empleado(emp_id):
+    """Borra al empleado del catalogo. Los registros de turnos se quedan como
+    estan a proposito: cada uno guarda por su cuenta nombre, rol y tarifa, asi
+    que las nominas ya cerradas siguen cuadrando aunque el empleado ya no exista.
+    Lo unico que se pierde es poder capturarle turnos nuevos."""
+    db.reference(f'empleados/{emp_id}').delete()
