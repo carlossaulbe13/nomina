@@ -142,10 +142,48 @@
         </div>
       </div>
       <div class="flex flex-col-reverse gap-2 border-t border-arena-200 bg-arena-50 px-5 py-4 sm:flex-row sm:justify-end">
-        <button x-ref="confirmCancelar" @click="cerrarConfirm(false)" class="btn btn-secundario">Cancelar</button>
-        <button @click="cerrarConfirm(true)" class="btn"
-                :class="confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
-                x-text="confirm.btnOk"></button>
+        <button x-ref="confirmCancelar" x-show="!confirm.borrando" @click="cerrarConfirm(false)"
+                class="btn btn-secundario">Cancelar</button>
+
+        {# Al confirmar un borrado, este boton encoge a circulo y se vuelve el
+           bote: mismo par .transicion-morfo/.circulo que el login y las tarjetas
+           de cobro. El tamano se congela en px antes de encoger (ver
+           cerrarConfirm) porque height no interpola desde `auto`. #}
+        <button x-ref="confirmOk" @click="cerrarConfirm(true)" style="--tam-circulo: 3.25rem"
+                :class="[
+                  confirm.tipo === 'danger' ? 'btn-peligro' : 'bg-emerald-600 text-white hover:bg-emerald-700',
+                  confirm.borrando ? 'circulo self-center' : ''
+                ]"
+                class="btn transicion-morfo relative overflow-hidden">
+          <span x-show="!confirm.borrando" x-text="confirm.btnOk"></span>
+
+          {# x-if y no x-show: las animaciones son CSS y solo arrancan al crearse
+             el nodo. Con x-show el nodo ya existe y correrian una sola vez. #}
+          <template x-if="confirm.borrando">
+            <span class="absolute inset-0 grid place-items-center">
+              {# El bote va corrido hacia abajo (borde en y=9) y la bisagra de la
+                 tapa es su extremo derecho, (20,9). overflow-visible porque al
+                 abrirse la tapa se sale del viewBox; dentro del circulo de
+                 52px le sobra sitio. #}
+              <svg viewBox="0 0 24 24" class="bote h-6 w-6 overflow-visible" fill="none"
+                   stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                   stroke-linejoin="round" aria-hidden="true">
+                <g class="bote-cuerpo">
+                  <path d="M18 9v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/>
+                  <path d="M10 13v5M14 13v5"/>
+                </g>
+                <g class="bote-tapa">
+                  <path d="M4 9h16"/>
+                  <path d="M9.2 9V7.4a1.1 1.1 0 0 1 1.1-1.1h3.4a1.1 1.1 0 0 1 1.1 1.1V9"/>
+                </g>
+              </svg>
+            </span>
+          </template>
+
+          {# El aro de carga vive mientras dure la peticion, no un tiempo fijo. #}
+          <span x-show="confirm.borrando" x-cloak role="status" aria-label="Eliminando"
+                class="bote-aro absolute inset-0 rounded-full border-[3px] border-white/25 border-t-white"></span>
+        </button>
       </div>
     </div>
   </div>
@@ -195,6 +233,12 @@
 <script>
   const SUCURSALES = {{ sucursales | tojson }};
 
+  // Lo que tardan en _head.html el encogido del boton (.55s) mas el destape del
+  // bote (.16s de espera + .72s). Con movimiento reducido nada de eso corre, asi
+  // que esperarlo solo seria un retraso sin nada que ver.
+  const DURACION_BOTE =
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+
   function empleadosApp() {
     return {
       empleados: [],
@@ -207,7 +251,11 @@
       form: { nombre: '', sucursal_id: '' },
       formError: '',
       guardando: false,
-      confirm: { show: false, titulo: '', mensaje: '', detalle: '', tipo: 'danger', btnOk: 'Confirmar', resolve: null },
+      confirm: {
+        show: false, titulo: '', mensaje: '', detalle: '', nombre: '',
+        borrando: false, retener: false,
+        tipo: 'danger', btnOk: 'Confirmar', resolve: null,
+      },
 
       async init() {
         try {
@@ -293,16 +341,42 @@
       pedir(opciones) {
         return new Promise(resolve => {
           this.confirm = {
-            show: true, titulo: '', mensaje: '', detalle: '',
+            show: true, titulo: '', mensaje: '', detalle: '', nombre: '',
+            borrando: false, retener: false,
             tipo: 'danger', btnOk: 'Confirmar', ...opciones, resolve
           };
           // El foco arranca en Cancelar: desde aqui se borra sin vuelta atras.
+          this.liberarBotonOk();
           this.$nextTick(() => this.$refs.confirmCancelar?.focus());
         });
       },
       cerrarConfirm(valor) {
-        this.confirm.show = false;
+        // Un solo guardia para todas las salidas del modal (boton, fondo y Esc):
+        // mientras el bote corre no se cancela ni se vuelve a confirmar. Sin
+        // esto, un segundo clic congelaria el tamano del boton ya encogido y se
+        // quedaria de 52px para siempre.
+        if (this.confirm.borrando) return;
+
+        // `retener` deja el modal abierto al confirmar: la animacion vive en su
+        // boton. Quien lo pidio se encarga de cerrarlo al terminar.
+        if (valor && this.confirm.retener) this.fijarBotonOk();
+        else this.confirm.show = false;
+
         this.confirm.resolve(valor);
+      },
+
+      // height no interpola desde `auto`: hay que congelar el tamano real en px
+      // antes de encoger. Mismo truco que el login y las tarjetas de cobro.
+      fijarBotonOk() {
+        const b = this.$refs.confirmOk;
+        if (!b) return;
+        b.style.width = b.offsetWidth + 'px';
+        b.style.height = b.offsetHeight + 'px';
+        void b.offsetHeight; // fuerza reflujo: sin esto el navegador agrupa
+      },
+      liberarBotonOk() {
+        const b = this.$refs.confirmOk;
+        if (b) { b.style.width = ''; b.style.height = ''; }
       },
 
       async darBaja(emp) {
@@ -342,13 +416,36 @@
           mensaje: 'Desaparece de la lista y ya no se le podrán capturar turnos. Los turnos que ya tiene registrados se conservan, así que las nóminas de semanas pasadas no cambian.',
           detalle: 'Esta acción no se puede deshacer. Si solo dejó de trabajar, usa «Dar de baja».',
           btnOk: 'Eliminar',
+          nombre: emp.nombre,
+          retener: true,
         });
         if (!ok) return;
+
+        // Animacion y peticion arrancan juntas y manda la que tarde mas: si el
+        // servidor contesta en 200ms la animacion igual se ve completa, y si
+        // tarda mas de la cuenta nadie ve el bote congelado a medio cerrar.
+        this.confirm.borrando = true;
+        const animacion = new Promise(listo => setTimeout(listo, DURACION_BOTE));
         const enviado = await enviar(`/empleados/api/${emp.id}/definitivo`, { method: 'DELETE' },
           'No se pudo eliminar al empleado');
-        if (!enviado) return;
+        if (!enviado) {
+          // Se corta la animacion a proposito: el aviso de error ya salio y
+          // dejar el bote girando diria lo contrario.
+          this.cerrarBorrado();
+          return;
+        }
+        await animacion;
         this.empleados = this.empleados.filter(e => e.id !== emp.id);
+        this.cerrarBorrado();
         avisar(`${emp.nombre} eliminado`, 'exito');
+      },
+
+      // El tamano en px se suelta despues de cerrar: si se soltara antes, el
+      // boton se veria estirarse de circulo a pastilla justo al desaparecer.
+      cerrarBorrado() {
+        this.confirm.borrando = false;
+        this.confirm.show = false;
+        this.liberarBotonOk();
       }
     }
   }

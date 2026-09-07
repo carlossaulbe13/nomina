@@ -243,6 +243,64 @@
   }
   .trazo-tardio { animation-delay: .14s; }
 
+  /* ---------- Borrado: el boton se vuelve bote ---------- */
+  /* El boton de confirmar encoge a circulo con .transicion-morfo/.circulo (el
+     mismo par que usan el login y las tarjetas de cobro) y dentro aparece el
+     bote destapandose. Las dos animaciones de aqui comparten duracion y curva a
+     proposito: se coordinan por los porcentajes de cada keyframe, no por delays
+     sueltos que habria que recalcular cada vez que se ajusta una.
+     `transform-box: view-box` es lo que permite dar el eje de giro en
+     coordenadas del viewBox del SVG en vez de la caja del elemento. Ojo: esas
+     coordenadas se miden desde la esquina del viewBox, asi que el SVG que las
+     use tiene que empezar en "0 0" o los ejes salen corridos. */
+
+  /* El icono aparece cuando el boton ya va a medio encoger. */
+  @keyframes bote-entra {
+    from { opacity: 0; transform: scale(.55); }
+    to   { opacity: 1; transform: none; }
+  }
+  .bote { animation: bote-entra .22s cubic-bezier(.34, 1.4, .64, 1) .12s both; }
+
+  /* La tapa gira sobre su extremo derecho, no sobre el centro: una que se
+     levanta por el medio se lee como tapa rota, no como bote destapandose.
+     El giro va en positivo: en SVG la `y` crece hacia abajo, asi que un angulo
+     negativo sobre esta bisagra hundiria la tapa dentro del bote en vez de
+     levantarla. Al abrirse, la tapa se sale del viewBox por arriba; por eso el
+     SVG lleva overflow-visible y le sobra sitio dentro del circulo. */
+  @keyframes bote-tapa {
+    0%   { transform: rotate(0deg) translate(0, 0); }
+    28%  { transform: rotate(26deg) translate(-.5px, -1.2px); }
+    54%  { transform: rotate(19deg) translate(-.3px, -.9px); }
+    100% { transform: rotate(0deg) translate(0, 0); }
+  }
+  .bote-tapa {
+    transform-box: view-box;
+    transform-origin: 20px 9px;
+    animation: bote-tapa .72s cubic-bezier(.34, 1.3, .5, 1) .16s both;
+  }
+
+  /* El cuerpo se hunde cuando salta la tapa. Sin esto la tapa parece despegarse
+     de un bote que no se entera. */
+  @keyframes bote-cuerpo {
+    0%, 100% { transform: none; }
+    30%      { transform: translateY(.9px) scaleY(.9); }
+    62%      { transform: translateY(0) scaleY(1.04); }
+  }
+  .bote-cuerpo {
+    transform-box: view-box;
+    transform-origin: 12px 21px;
+    animation: bote-cuerpo .72s cubic-bezier(.34, 1.3, .5, 1) .16s both;
+  }
+
+  /* El aro de carga aparece cuando el boton ya es casi circulo: girando desde el
+     primer momento se ve como una elipse dando vueltas mientras encoge. Lleva
+     las dos animaciones juntas porque no puede combinarse con .girando, que
+     pisaria este `animation`. */
+  @keyframes bote-aro { from { opacity: 0; } to { opacity: 1; } }
+  .bote-aro {
+    animation: girar .7s linear infinite, bote-aro .2s ease-out .4s both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: .01ms !important;
